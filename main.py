@@ -13,7 +13,6 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -51,22 +50,20 @@ def get_stats():
         ]
     }
 
-class IncidentCreate(BaseModel):
+class IncidentReport(BaseModel):
     category: str
     description: str
     state: str
     lga: Optional[str] = None
     polling_unit_code: Optional[str] = None
-    reporter_type: Optional[str] = "citizen"
 
 @app.post("/api/v1/incidents", status_code=201)
-def submit_incident(incident: IncidentCreate):
+def submit_incident(incident: IncidentReport):
     return {
         "id": str(uuid.uuid4()),
         "category": incident.category,
         "description": incident.description,
         "state": incident.state,
-        "lga": incident.lga,
         "status": "unverified",
         "message": "Report received successfully"
     }
@@ -77,6 +74,5 @@ def list_incidents():
         "incidents": [],
         "total": 0,
         "page": 1,
-        "per_page": 20,
-        "pages": 0
+        "per_page": 20
     }
