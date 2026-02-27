@@ -1,0 +1,1386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Revoda — Election Incident Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green: #008751;
+    --green-light: #00a862;
+    --green-dark: #005c37;
+    --white: #F7F5F0;
+    --ink: #0D1117;
+    --ink-soft: #1e2630;
+    --accent: #E8C440;
+    --danger: #E53D2E;
+    --danger-soft: #ff6b5b;
+    --info: #3d8bcd;
+    --muted: #6b7a8d;
+    --border: rgba(0,135,81,0.18);
+    --card: rgba(255,255,255,0.04);
+    --glass: rgba(13,17,23,0.85);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--ink);
+    color: var(--white);
+    font-family: 'Manrope', sans-serif;
+    font-size: 14px;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Noise texture overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.4;
+  }
+
+  /* ── NAV ── */
+  nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 28px;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: rgba(13,17,23,0.92);
+    backdrop-filter: blur(12px);
+    z-index: 100;
+  }
+
+  .nav-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .nav-logo {
+    width: 32px; height: 32px;
+    background: var(--green);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 16px;
+    color: white;
+  }
+
+  .nav-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 18px;
+    letter-spacing: -0.3px;
+  }
+
+  .nav-title span { color: var(--green-light); }
+
+  .nav-badge {
+    background: var(--danger);
+    color: white;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-family: 'DM Mono', monospace;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+  }
+
+  .nav-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .nav-election-label {
+    font-size: 11px;
+    font-family: 'DM Mono', monospace;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .nav-election-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent);
+  }
+
+  .btn-report {
+    background: var(--green);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex; align-items: center; gap: 6px;
+  }
+
+  .btn-report:hover { background: var(--green-light); transform: translateY(-1px); }
+
+  /* ── LAYOUT ── */
+  .layout {
+    display: grid;
+    grid-template-columns: 260px 1fr 300px;
+    height: calc(100vh - 57px);
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    border-right: 1px solid var(--border);
+    padding: 20px 16px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .sidebar::-webkit-scrollbar { width: 4px; }
+  .sidebar::-webkit-scrollbar-track { background: transparent; }
+  .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .section-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 10px;
+  }
+
+  /* Stats cards */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 10px;
+    transition: border-color 0.2s;
+  }
+
+  .stat-card:hover { border-color: var(--green); }
+
+  .stat-value {
+    font-family: 'Syne', sans-serif;
+    font-size: 20px;
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .stat-label {
+    font-size: 10px;
+    color: var(--muted);
+    font-weight: 500;
+  }
+
+  .stat-card.danger .stat-value { color: var(--danger-soft); }
+  .stat-card.green .stat-value { color: var(--green-light); }
+  .stat-card.accent .stat-value { color: var(--accent); }
+  .stat-card.info .stat-value { color: var(--info); }
+
+  /* Category filters */
+  .category-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .category-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+    border: 1px solid transparent;
+  }
+
+  .category-item:hover, .category-item.active {
+    background: var(--card);
+    border-color: var(--border);
+  }
+
+  .category-item.active { border-color: var(--green); }
+
+  .cat-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .cat-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .cat-name {
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  .cat-count {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    background: rgba(255,255,255,0.06);
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+
+  /* Phase selector */
+  .phase-tabs {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .phase-tab {
+    padding: 10px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .phase-tab:hover { border-color: var(--green); }
+  .phase-tab.active { background: rgba(0,135,81,0.12); border-color: var(--green); }
+
+  .phase-name {
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .phase-role {
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 2px;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .phase-status {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 600;
+  }
+
+  .phase-status.live { background: rgba(229,61,46,0.2); color: var(--danger-soft); }
+  .phase-status.upcoming { background: rgba(61,139,205,0.2); color: var(--info); }
+  .phase-status.done { background: rgba(107,122,141,0.2); color: var(--muted); }
+
+  /* ── MAP CENTER ── */
+  .map-area {
+    position: relative;
+    overflow: hidden;
+    background: #0a0f15;
+  }
+
+  .map-header {
+    position: absolute;
+    top: 16px; left: 16px;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .map-breadcrumb {
+    background: var(--glass);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--white);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .map-breadcrumb span { color: var(--green-light); }
+
+  .map-controls {
+    position: absolute;
+    top: 16px; right: 16px;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .map-btn {
+    width: 32px; height: 32px;
+    background: var(--glass);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--white);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    transition: all 0.2s;
+  }
+
+  .map-btn:hover { border-color: var(--green); background: rgba(0,135,81,0.2); }
+
+  /* SVG Nigeria Map */
+  .nigeria-map-svg {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  .map-svg-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px 20px;
+  }
+
+  /* Incident markers on map */
+  .incident-overlay {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 5;
+  }
+
+  .inc-marker {
+    position: absolute;
+    pointer-events: all;
+    cursor: pointer;
+    transform: translate(-50%, -50%);
+  }
+
+  .inc-dot {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.3);
+    position: relative;
+    transition: transform 0.2s;
+  }
+
+  .inc-marker:hover .inc-dot { transform: scale(1.5); }
+
+  .inc-dot.violence { background: var(--danger); box-shadow: 0 0 12px rgba(229,61,46,0.6); }
+  .inc-dot.voting { background: var(--green); box-shadow: 0 0 10px rgba(0,135,81,0.5); }
+  .inc-dot.materials { background: var(--accent); box-shadow: 0 0 10px rgba(232,196,64,0.5); }
+  .inc-dot.police { background: var(--info); box-shadow: 0 0 10px rgba(61,139,205,0.5); }
+  .inc-dot.results { background: #c084fc; box-shadow: 0 0 10px rgba(192,132,252,0.5); }
+
+  .inc-dot::after {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    border: 1px solid currentColor;
+    opacity: 0.3;
+    animation: ripple 2s infinite;
+  }
+
+  .inc-marker.hot .inc-dot::after { animation-duration: 1s; }
+
+  @keyframes ripple {
+    0% { transform: scale(1); opacity: 0.3; }
+    100% { transform: scale(2.5); opacity: 0; }
+  }
+
+  /* Heatmap blobs */
+  .heatblob {
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+    filter: blur(30px);
+    opacity: 0.12;
+    transform: translate(-50%, -50%);
+  }
+
+  /* Map bottom bar */
+  .map-bottom {
+    position: absolute;
+    bottom: 16px; left: 16px; right: 16px;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .map-legend {
+    background: var(--glass);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 14px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 10px;
+    font-family: 'DM Mono', monospace;
+    color: var(--muted);
+  }
+
+  .legend-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+  }
+
+  .map-live-count {
+    background: var(--glass);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--danger);
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--danger-soft);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .live-dot {
+    width: 6px; height: 6px;
+    background: var(--danger);
+    border-radius: 50%;
+    animation: pulse 1s infinite;
+  }
+
+  /* ── RIGHT PANEL ── */
+  .right-panel {
+    border-left: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .panel-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .panel-tab {
+    flex: 1;
+    padding: 12px;
+    text-align: center;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: 'DM Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid transparent;
+  }
+
+  .panel-tab.active { color: var(--green-light); border-bottom-color: var(--green); }
+  .panel-tab:hover { color: var(--white); }
+
+  .panel-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .panel-content::-webkit-scrollbar { width: 4px; }
+  .panel-content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* Incident feed */
+  .incident-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    animation: slideIn 0.3s ease;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .incident-card:hover { border-color: var(--green); background: rgba(0,135,81,0.05); }
+  .incident-card.unverified { border-left: 3px solid var(--accent); }
+  .incident-card.verified { border-left: 3px solid var(--green); }
+  .incident-card.critical { border-left: 3px solid var(--danger); }
+
+  .inc-card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+
+  .inc-type-badge {
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-family: 'DM Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .inc-type-badge.violence { background: rgba(229,61,46,0.2); color: var(--danger-soft); }
+  .inc-type-badge.voting { background: rgba(0,135,81,0.2); color: var(--green-light); }
+  .inc-type-badge.materials { background: rgba(232,196,64,0.2); color: var(--accent); }
+  .inc-type-badge.police { background: rgba(61,139,205,0.2); color: var(--info); }
+  .inc-type-badge.results { background: rgba(192,132,252,0.2); color: #c084fc; }
+  .inc-type-badge.counting { background: rgba(251,146,60,0.2); color: #fb923c; }
+
+  .inc-time {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+  }
+
+  .inc-desc {
+    font-size: 12px;
+    color: var(--white);
+    line-height: 1.5;
+    margin-bottom: 8px;
+    opacity: 0.85;
+  }
+
+  .inc-location {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+  }
+
+  .inc-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
+  }
+
+  .inc-verified {
+    font-size: 10px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-weight: 600;
+  }
+
+  .inc-verified.yes { color: var(--green-light); }
+  .inc-verified.no { color: var(--accent); }
+  .inc-verified.critical { color: var(--danger-soft); }
+
+  .inc-actions {
+    display: flex;
+    gap: 4px;
+  }
+
+  .inc-action-btn {
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    background: none;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .inc-action-btn:hover { border-color: var(--green); color: var(--green-light); }
+
+  /* Report form */
+  .report-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .form-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .form-select, .form-input, .form-textarea {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 12px;
+    color: var(--white);
+    font-family: 'Manrope', sans-serif;
+    font-size: 13px;
+    transition: border-color 0.2s;
+    width: 100%;
+  }
+
+  .form-select:focus, .form-input:focus, .form-textarea:focus {
+    outline: none;
+    border-color: var(--green);
+  }
+
+  .form-select option { background: var(--ink-soft); }
+
+  .form-textarea {
+    resize: vertical;
+    min-height: 80px;
+  }
+
+  .anon-notice {
+    background: rgba(0,135,81,0.08);
+    border: 1px solid rgba(0,135,81,0.25);
+    border-radius: 6px;
+    padding: 10px;
+    font-size: 11px;
+    color: var(--green-light);
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    line-height: 1.5;
+  }
+
+  .btn-submit {
+    background: var(--green);
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 6px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    width: 100%;
+  }
+
+  .btn-submit:hover { background: var(--green-light); }
+
+  /* Chart bar */
+  .mini-chart {
+    margin-top: 4px;
+  }
+
+  .chart-bar-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .chart-label {
+    font-size: 10px;
+    color: var(--muted);
+    width: 70px;
+    flex-shrink: 0;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .chart-track {
+    flex: 1;
+    height: 6px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .chart-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 1s ease;
+  }
+
+  .chart-val {
+    font-size: 10px;
+    color: var(--white);
+    font-family: 'DM Mono', monospace;
+    width: 30px;
+    text-align: right;
+  }
+
+  /* Alert escalation */
+  .alert-item {
+    background: rgba(229,61,46,0.08);
+    border: 1px solid rgba(229,61,46,0.25);
+    border-radius: 8px;
+    padding: 12px;
+    animation: slideIn 0.3s ease;
+  }
+
+  .alert-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+
+  .alert-icon {
+    width: 20px; height: 20px;
+    background: var(--danger);
+    border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+  }
+
+  .alert-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--danger-soft);
+  }
+
+  .alert-body {
+    font-size: 11px;
+    color: var(--white);
+    opacity: 0.8;
+    line-height: 1.5;
+    margin-bottom: 8px;
+  }
+
+  .alert-meta {
+    display: flex;
+    gap: 8px;
+    font-size: 10px;
+    font-family: 'DM Mono', monospace;
+    color: var(--muted);
+  }
+
+  /* Scrollbar hide for panel */
+  .panel-tab-contents { display: none; }
+  .panel-tab-contents.active-content { display: flex; flex-direction: column; gap: 12px; }
+
+  /* Responsive note */
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; }
+    .sidebar, .right-panel { display: none; }
+  }
+
+  /* Entry animation */
+  nav { animation: fadeDown 0.4s ease; }
+  .sidebar { animation: fadeLeft 0.4s ease 0.1s both; }
+  .map-area { animation: fadeIn 0.4s ease 0.2s both; }
+  .right-panel { animation: fadeRight 0.4s ease 0.1s both; }
+
+  @keyframes fadeDown { from { opacity:0; transform: translateY(-10px); } to { opacity:1; transform: none; } }
+  @keyframes fadeLeft { from { opacity:0; transform: translateX(-10px); } to { opacity:1; transform: none; } }
+  @keyframes fadeRight { from { opacity:0; transform: translateX(10px); } to { opacity:1; transform: none; } }
+  @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-brand">
+    <div class="nav-logo">R</div>
+    <div>
+      <div class="nav-title">Re<span>Vo</span>Da</div>
+    </div>
+    <div class="nav-badge">● LIVE</div>
+  </div>
+  <div style="display:flex;align-items:center;gap:6px">
+    <div>
+      <div class="nav-election-label">Current Election</div>
+      <div class="nav-election-name">2027 General Elections — Pre-Election Phase</div>
+    </div>
+  </div>
+  <div class="nav-right">
+    <div style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace">EiE Nigeria · Civic Intelligence Platform</div>
+    <button class="btn-report" onclick="switchTab('report')">+ Report Incident</button>
+  </div>
+</nav>
+
+<!-- LAYOUT -->
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <!-- Stats -->
+    <div>
+      <div class="section-label">Live Statistics</div>
+      <div class="stats-grid">
+        <div class="stat-card danger">
+          <div class="stat-value">1,247</div>
+          <div class="stat-label">Total Incidents</div>
+        </div>
+        <div class="stat-card accent">
+          <div class="stat-value">384</div>
+          <div class="stat-label">Unverified</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-value">863</div>
+          <div class="stat-label">Verified</div>
+        </div>
+        <div class="stat-card info">
+          <div class="stat-value">37</div>
+          <div class="stat-label">Escalated</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Incident Categories -->
+    <div>
+      <div class="section-label">Incident Categories</div>
+      <div class="category-list">
+        <div class="category-item active" onclick="filterCat(this,'all')">
+          <div class="cat-left">
+            <div class="cat-dot" style="background:#6b7a8d"></div>
+            <div class="cat-name">All Incidents</div>
+          </div>
+          <span class="cat-count">1,247</span>
+        </div>
+        <div class="category-item" onclick="filterCat(this,'violence')">
+          <div class="cat-left">
+            <div class="cat-dot" style="background:var(--danger)"></div>
+            <div class="cat-name">Violence</div>
+          </div>
+          <span class="cat-count">218</span>
+        </div>
+        <div class="category-item" onclick="filterCat(this,'voting')">
+          <div class="cat-left">
+            <div class="cat-dot" style="background:var(--green)"></div>
+            <div class="cat-name">Voting Irregularities</div>
+          </div>
+          <span class="cat-count">341</span>
+        </div>
+        <div class="category-item" onclick="filterCat(this,'materials')">
+          <div class="cat-left">
+            <div class="cat-dot" style="background:var(--accent)"></div>
+            <div class="cat-name">Material Availability</div>
+          </div>
+          <span class="cat-count">187</span>
+        </div>
+        <div class="category-item" onclick="filterCat(this,'police')">
+          <div class="cat-left">
+            <div class="cat-dot" style="background:var(--info)"></div>
+            <div class="cat-name">Police Behaviour</div>
+          </div>
+          <span class="cat-count">156</span>
+        </div>
+        <div class="category-item" onclick="filterCat(this,'results')">
+          <div class="cat-left">
+            <div class="cat-dot" style="background:#c084fc"></div>
+            <div class="cat-name">Results Verification</div>
+          </div>
+          <span class="cat-count">203</span>
+        </div>
+        <div class="category-item" onclick="filterCat(this,'counting')">
+          <div class="cat-left">
+            <div class="cat-dot" style="background:#fb923c"></div>
+            <div class="cat-name">Vote Counting</div>
+          </div>
+          <span class="cat-count">142</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Election Phase -->
+    <div>
+      <div class="section-label">Election Phases</div>
+      <div class="phase-tabs">
+        <div class="phase-tab active">
+          <div>
+            <div class="phase-name">Pre-Election</div>
+            <div class="phase-role">Early warning & prevention</div>
+          </div>
+          <span class="phase-status live">LIVE</span>
+        </div>
+        <div class="phase-tab">
+          <div>
+            <div class="phase-name">Election Day</div>
+            <div class="phase-role">Real-time reporting</div>
+          </div>
+          <span class="phase-status upcoming">SOON</span>
+        </div>
+        <div class="phase-tab">
+          <div>
+            <div class="phase-name">Post-Election</div>
+            <div class="phase-role">Evidence archive</div>
+          </div>
+          <span class="phase-status upcoming">SOON</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Trend mini chart -->
+    <div>
+      <div class="section-label">Incidents by State (Top 5)</div>
+      <div class="mini-chart">
+        <div class="chart-bar-row">
+          <div class="chart-label">Rivers</div>
+          <div class="chart-track"><div class="chart-fill" style="width:82%;background:var(--danger)"></div></div>
+          <div class="chart-val">182</div>
+        </div>
+        <div class="chart-bar-row">
+          <div class="chart-label">Lagos</div>
+          <div class="chart-track"><div class="chart-fill" style="width:68%;background:var(--accent)"></div></div>
+          <div class="chart-val">154</div>
+        </div>
+        <div class="chart-bar-row">
+          <div class="chart-label">Kano</div>
+          <div class="chart-track"><div class="chart-fill" style="width:61%;background:var(--info)"></div></div>
+          <div class="chart-val">138</div>
+        </div>
+        <div class="chart-bar-row">
+          <div class="chart-label">Imo</div>
+          <div class="chart-track"><div class="chart-fill" style="width:52%;background:#c084fc)"></div></div>
+          <div class="chart-val">117</div>
+        </div>
+        <div class="chart-bar-row">
+          <div class="chart-label">Borno</div>
+          <div class="chart-track"><div class="chart-fill" style="width:44%;background:var(--green)"></div></div>
+          <div class="chart-val">99</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAP AREA -->
+  <div class="map-area">
+    <!-- Heat blobs -->
+    <div class="heatblob" style="width:200px;height:200px;background:var(--danger);top:38%;left:20%"></div>
+    <div class="heatblob" style="width:160px;height:160px;background:var(--accent);top:62%;left:45%"></div>
+    <div class="heatblob" style="width:180px;height:180px;background:var(--info);top:30%;left:60%"></div>
+    <div class="heatblob" style="width:140px;height:140px;background:var(--green);top:55%;left:72%"></div>
+    <div class="heatblob" style="width:120px;height:120px;background:#c084fc;top:20%;left:35%"></div>
+
+    <!-- Map breadcrumb -->
+    <div class="map-header">
+      <div class="map-breadcrumb">🇳🇬 Nigeria → <span>All States</span> → All LGAs</div>
+    </div>
+
+    <!-- Map controls -->
+    <div class="map-controls">
+      <div class="map-btn" title="Zoom In">+</div>
+      <div class="map-btn" title="Zoom Out">−</div>
+      <div class="map-btn" title="Heat Map">🔥</div>
+      <div class="map-btn" title="Toggle Clusters">◎</div>
+      <div class="map-btn" title="Historical Layer">📅</div>
+    </div>
+
+    <!-- Stylized Nigeria Map SVG -->
+    <div class="map-svg-container">
+      <svg viewBox="0 0 500 420" style="width:100%;max-height:calc(100vh - 200px);filter:drop-shadow(0 0 30px rgba(0,135,81,0.1))">
+        <!-- Nigeria outline approximation -->
+        <defs>
+          <radialGradient id="mapGlow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#00874" stop-opacity="0.15"/>
+            <stop offset="100%" stop-color="#008751" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+        
+        <!-- North West -->
+        <polygon points="60,40 140,35 155,65 165,90 140,110 110,130 75,115 50,95 45,65" fill="#0d2818" stroke="#00521f" stroke-width="1"/>
+        <!-- Sokoto label -->
+        <text x="95" y="80" font-family="DM Mono,monospace" font-size="8" fill="#008751" opacity="0.7">SOKOTO</text>
+        
+        <!-- North Central -->
+        <polygon points="155,65 230,55 260,70 265,100 250,130 220,150 185,145 165,120 155,90" fill="#0a2015" stroke="#005c37" stroke-width="1"/>
+        <text x="195" y="100" font-family="DM Mono,monospace" font-size="8" fill="#008751" opacity="0.7">KADUNA</text>
+        
+        <!-- North East -->
+        <polygon points="260,55 340,45 380,70 390,110 370,145 330,155 295,140 265,115 260,85" fill="#0d2818" stroke="#00521f" stroke-width="1"/>
+        <text x="300" y="100" font-family="DM Mono,monospace" font-size="8" fill="#008751" opacity="0.7">BORNO</text>
+        
+        <!-- FCT / North Central Lower -->
+        <polygon points="185,145 220,150 250,170 240,200 210,215 180,205 165,185 170,160" fill="#081a10" stroke="#003d26" stroke-width="1"/>
+        <text x="198" y="183" font-family="DM Mono,monospace" font-size="7" fill="#00a862" opacity="0.9">FCT</text>
+
+        <!-- Kogi / Middle Belt -->
+        <polygon points="140,130 185,145 165,185 150,220 120,230 90,215 75,185 90,155 115,140" fill="#0a1e14" stroke="#004d2e" stroke-width="1"/>
+        
+        <!-- South West (Lagos, Ogun etc) -->
+        <polygon points="75,215 120,230 150,250 145,285 120,310 85,315 55,295 45,265 50,235" fill="#061510" stroke="#003520" stroke-width="1"/>
+        <text x="88" y="270" font-family="DM Mono,monospace" font-size="8" fill="#00a862" opacity="0.8">LAGOS</text>
+
+        <!-- South South (Rivers, Delta) -->
+        <polygon points="150,250 210,250 240,265 250,295 235,325 205,340 170,335 145,315 140,285" fill="#081912" stroke="#004028" stroke-width="1"/>
+        <text x="178" y="300" font-family="DM Mono,monospace" font-size="8" fill="#e5523e" opacity="0.9">RIVERS</text>
+
+        <!-- South East (Imo, Anambra) -->
+        <polygon points="240,245 285,240 310,260 315,290 295,315 265,325 240,310 230,285 235,260" fill="#0a1c12" stroke="#004530" stroke-width="1"/>
+        <text x="260" y="285" font-family="DM Mono,monospace" font-size="7" fill="#00a862" opacity="0.7">IMO</text>
+
+        <!-- South South 2 (Akwa Ibom, Cross River) -->
+        <polygon points="295,280 330,265 365,270 375,305 355,335 320,345 295,330 285,305" fill="#081510" stroke="#003820" stroke-width="1"/>
+
+        <!-- Niger Delta -->
+        <polygon points="145,335 205,340 240,355 235,380 200,390 160,385 135,370 130,350" fill="#061210" stroke="#003018" stroke-width="1"/>
+        <text x="168" y="368" font-family="DM Mono,monospace" font-size="7" fill="#008751" opacity="0.6">DELTA</text>
+
+        <!-- Grid lines overlay -->
+        <line x1="0" y1="140" x2="500" y2="140" stroke="#008751" stroke-width="0.3" stroke-dasharray="4,8" opacity="0.3"/>
+        <line x1="0" y1="250" x2="500" y2="250" stroke="#008751" stroke-width="0.3" stroke-dasharray="4,8" opacity="0.3"/>
+        <line x1="160" y1="0" x2="160" y2="420" stroke="#008751" stroke-width="0.3" stroke-dasharray="4,8" opacity="0.3"/>
+        <line x1="290" y1="0" x2="290" y2="420" stroke="#008751" stroke-width="0.3" stroke-dasharray="4,8" opacity="0.3"/>
+      </svg>
+    </div>
+
+    <!-- Incident markers -->
+    <div class="incident-overlay">
+      <!-- Violence - Rivers -->
+      <div class="inc-marker hot" style="left:36%;top:68%" onclick="selectIncident('INC-001')">
+        <div class="inc-dot violence"></div>
+      </div>
+      <!-- Violence 2 -->
+      <div class="inc-marker hot" style="left:32%;top:71%" onclick="selectIncident('INC-002')">
+        <div class="inc-dot violence"></div>
+      </div>
+      <!-- Voting - Lagos -->
+      <div class="inc-marker" style="left:18%;top:64%" onclick="selectIncident('INC-003')">
+        <div class="inc-dot voting"></div>
+      </div>
+      <!-- Materials - Kano -->
+      <div class="inc-marker" style="left:48%;top:22%" onclick="selectIncident('INC-004')">
+        <div class="inc-dot materials"></div>
+      </div>
+      <!-- Police - FCT -->
+      <div class="inc-marker" style="left:43%;top:47%" onclick="selectIncident('INC-005')">
+        <div class="inc-dot police"></div>
+      </div>
+      <!-- Results - Borno -->
+      <div class="inc-marker" style="left:72%;top:26%" onclick="selectIncident('INC-006')">
+        <div class="inc-dot results"></div>
+      </div>
+      <!-- Counting -->
+      <div class="inc-marker" style="left:60%;top:57%" onclick="selectIncident('INC-007')">
+        <div class="inc-dot" style="background:#fb923c;box-shadow:0 0 10px rgba(251,146,60,0.5)"></div>
+      </div>
+      <!-- Materials 2 -->
+      <div class="inc-marker" style="left:25%;top:40%" onclick="selectIncident('INC-008')">
+        <div class="inc-dot materials"></div>
+      </div>
+      <!-- Police 2 -->
+      <div class="inc-marker" style="left:55%;top:78%" onclick="selectIncident('INC-009')">
+        <div class="inc-dot police"></div>
+      </div>
+    </div>
+
+    <!-- Bottom bar -->
+    <div class="map-bottom">
+      <div class="map-legend">
+        <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);margin-right:4px">LEGEND</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--danger)"></div>Violence</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div>Voting</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--accent)"></div>Materials</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--info)"></div>Police</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#c084fc"></div>Results</div>
+      </div>
+      <div class="map-live-count">
+        <div class="live-dot"></div>
+        9 incidents visible · Last updated 12s ago
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="right-panel">
+    <div class="panel-tabs">
+      <div class="panel-tab active" onclick="switchTab('feed')" id="tab-feed">Feed</div>
+      <div class="panel-tab" onclick="switchTab('alerts')" id="tab-alerts">Alerts</div>
+      <div class="panel-tab" onclick="switchTab('report')" id="tab-report">Report</div>
+    </div>
+
+    <div class="panel-content" id="panel-body">
+      <!-- Content injected by JS -->
+    </div>
+  </div>
+
+</div>
+
+<script>
+const incidents = [
+  {
+    id: 'INC-001',
+    type: 'violence',
+    typeName: 'Violence',
+    time: '09:47 AM',
+    desc: 'Armed individuals disrupted voting at PU 007, intimidating voters and INEC officials before police arrived.',
+    location: 'Obio-Akpor LGA, Rivers State',
+    verified: 'critical',
+    verifiedLabel: '⚠ ESCALATED',
+    puCode: 'RV-OBK-007'
+  },
+  {
+    id: 'INC-002',
+    type: 'materials',
+    typeName: 'Materials',
+    time: '10:12 AM',
+    desc: 'BVAS machine malfunction reported. Voters unable to accredit. Manual fallback not authorised.',
+    location: 'Ikeja LGA, Lagos State',
+    verified: 'no',
+    verifiedLabel: '⏳ Unverified',
+    puCode: 'LG-IKJ-031'
+  },
+  {
+    id: 'INC-003',
+    type: 'voting',
+    typeName: 'Voting',
+    time: '10:35 AM',
+    desc: 'Multiple voters turned away citing wrong polling unit despite having PVCs. Party agents filmed the incident.',
+    location: 'Oshodi-Isolo LGA, Lagos State',
+    verified: 'yes',
+    verifiedLabel: '✓ Verified',
+    puCode: 'LG-OSH-018'
+  },
+  {
+    id: 'INC-004',
+    type: 'police',
+    typeName: 'Police',
+    time: '11:02 AM',
+    desc: 'Police officers stationed inside polling unit in violation of INEC guidelines, pressuring voters.',
+    location: 'Gwale LGA, Kano State',
+    verified: 'yes',
+    verifiedLabel: '✓ Verified',
+    puCode: 'KN-GWL-002'
+  },
+  {
+    id: 'INC-005',
+    type: 'results',
+    typeName: 'Results',
+    time: '05:15 PM',
+    desc: 'Result sheet (Form EC8A) not displayed at polling unit before departure. Agents denied copies.',
+    location: 'Bwari LGA, FCT Abuja',
+    verified: 'no',
+    verifiedLabel: '⏳ Unverified',
+    puCode: 'FC-BWR-011'
+  },
+  {
+    id: 'INC-006',
+    type: 'counting',
+    typeName: 'Counting',
+    time: '04:48 PM',
+    desc: 'Ballot box snatching reported during collation. Local party officials eyewitness accounts recorded.',
+    location: 'Maiduguri MC, Borno State',
+    verified: 'critical',
+    verifiedLabel: '⚠ ESCALATED',
+    puCode: 'BO-MMC-044'
+  }
+];
+
+const alerts = [
+  {
+    title: 'HOTSPOT DETECTED — Rivers State',
+    body: '6 violence incidents within 3km radius of Port Harcourt Zone 3. Escalation recommended.',
+    meta: ['09:52 AM', 'AUTO-DETECTED', 'Rivers']
+  },
+  {
+    title: 'BVAS FAILURE — 4 LGAs',
+    body: 'Materials failure cluster: Lagos (Ikeja, Kosofe), Ogun (Abeokuta). INEC notified via partner CSO.',
+    meta: ['10:18 AM', 'PARTNER REPORT', 'Lagos/Ogun']
+  },
+  {
+    title: 'RESULTS IRREGULARITY — Borno',
+    body: 'Pattern match: 3 collation centres with missing Form EC8A. Historical comparison: matches 2019 pattern in same LGA.',
+    meta: ['05:22 PM', 'AI-FLAGGED', 'Borno']
+  }
+];
+
+function renderFeed() {
+  return incidents.map(inc => `
+    <div class="incident-card ${inc.verified}" id="${inc.id}">
+      <div class="inc-card-header">
+        <span class="inc-type-badge ${inc.type}">${inc.typeName}</span>
+        <span class="inc-time">${inc.time}</span>
+      </div>
+      <div class="inc-desc">${inc.desc}</div>
+      <div class="inc-location">📍 ${inc.location}</div>
+      <div class="inc-footer">
+        <span class="inc-verified ${inc.verified}">${inc.verifiedLabel}</span>
+        <div class="inc-actions">
+          <button class="inc-action-btn">Verify</button>
+          <button class="inc-action-btn">Escalate</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderAlerts() {
+  return alerts.map(a => `
+    <div class="alert-item">
+      <div class="alert-header">
+        <div class="alert-icon">⚠</div>
+        <div class="alert-title">${a.title}</div>
+      </div>
+      <div class="alert-body">${a.body}</div>
+      <div class="alert-meta">
+        ${a.meta.map(m => `<span>${m}</span>`).join(' · ')}
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderReport() {
+  return `
+    <div class="report-form">
+      <div class="anon-notice">
+        🔒 Your identity is protected. All reporter information is encrypted and anonymised before storage.
+      </div>
+      <div class="form-group">
+        <label class="form-label">Incident Category</label>
+        <select class="form-select">
+          <option>Select category...</option>
+          <option>Electoral Officials Arrival</option>
+          <option>Material Availability</option>
+          <option>Voting Irregularity</option>
+          <option>Vote Counting</option>
+          <option>Result Announcement</option>
+          <option>Violence</option>
+          <option>Police Behaviour</option>
+          <option>Results Verification</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">State</label>
+        <select class="form-select">
+          <option>Select state...</option>
+          <option>Abia</option><option>Adamawa</option><option>Akwa Ibom</option>
+          <option>Anambra</option><option>Bauchi</option><option>Bayelsa</option>
+          <option>Benue</option><option>Borno</option><option>Cross River</option>
+          <option>Delta</option><option>Ebonyi</option><option>Edo</option>
+          <option>Ekiti</option><option>Enugu</option><option>FCT</option>
+          <option>Gombe</option><option>Imo</option><option>Jigawa</option>
+          <option>Kaduna</option><option>Kano</option><option>Katsina</option>
+          <option>Kebbi</option><option>Kogi</option><option>Kwara</option>
+          <option>Lagos</option><option>Nasarawa</option><option>Niger</option>
+          <option>Ogun</option><option>Ondo</option><option>Osun</option>
+          <option>Oyo</option><option>Plateau</option><option>Rivers</option>
+          <option>Sokoto</option><option>Taraba</option><option>Yobe</option>
+          <option>Zamfara</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Polling Unit Code (optional)</label>
+        <input class="form-input" placeholder="e.g. LG-IKJ-031" type="text"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Describe What Happened</label>
+        <textarea class="form-textarea" placeholder="Provide as much detail as possible — time, people involved, what you witnessed..."></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Reporter Type</label>
+        <select class="form-select">
+          <option>Citizen Voter</option>
+          <option>Party Agent</option>
+          <option>Observer (CSO)</option>
+          <option>Journalist</option>
+          <option>INEC Official</option>
+        </select>
+      </div>
+      <button class="btn-submit" onclick="submitReport()">Submit Incident Report →</button>
+    </div>
+  `;
+}
+
+let currentTab = 'feed';
+
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.panel-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  const body = document.getElementById('panel-body');
+  if (tab === 'feed') body.innerHTML = renderFeed();
+  else if (tab === 'alerts') body.innerHTML = renderAlerts();
+  else if (tab === 'report') body.innerHTML = renderReport();
+}
+
+function filterCat(el, cat) {
+  document.querySelectorAll('.category-item').forEach(i => i.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function selectIncident(id) {
+  switchTab('feed');
+  setTimeout(() => {
+    const el = document.getElementById(id);
+    if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.style.borderColor = 'var(--green-light)'; setTimeout(() => el.style.borderColor = '', 2000); }
+  }, 100);
+}
+
+function submitReport() {
+  const btn = document.querySelector('.btn-submit');
+  btn.textContent = '✓ Report Submitted — Anonymised';
+  btn.style.background = 'var(--green-dark)';
+  setTimeout(() => switchTab('feed'), 2000);
+}
+
+// Init
+switchTab('feed');
+
+// Simulate live incoming report
+setTimeout(() => {
+  const inc = incidents;
+  inc.unshift({
+    id: 'INC-NEW',
+    type: 'voting',
+    typeName: 'Voting',
+    time: 'Just now',
+    desc: 'New report: Underage individuals observed in queue at PU 003. Party agent raised objection.',
+    location: 'Owerri North LGA, Imo State',
+    verified: 'no',
+    verifiedLabel: '⏳ Unverified',
+    puCode: 'IM-OWN-003'
+  });
+  if (currentTab === 'feed') {
+    document.getElementById('panel-body').innerHTML = renderFeed();
+  }
+}, 5000);
+</script>
+</body>
+</html>

@@ -1,0 +1,79 @@
+# Revoda — Local Development Stack
+# Run: docker compose up -d
+
+version: '3.9'
+
+services:
+
+  # ── PostgreSQL with PostGIS ──────────────────────────────────────
+  db:
+    image: postgis/postgis:15-3.4
+    container_name: revoda_db
+    environment:
+      POSTGRES_USER: revoda
+      POSTGRES_PASSWORD: revoda
+      POSTGRES_DB: revoda
+    ports:
+      - "5432:5432"
+    volumes:
+      - revoda_db_data:/var/lib/postgresql/data
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U revoda"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ── Redis (caching + WebSocket pub/sub) ──────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: revoda_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - revoda_redis_data:/data
+    command: redis-server --save 60 1 --loglevel warning
+
+  # ── FastAPI backend ───────────────────────────────────────────────
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: revoda_api
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://revoda:revoda@db/revoda
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-dev-secret-change-in-prod}
+      ANONYMIZER_SECRET: ${ANONYMIZER_SECRET:-dev-anon-secret}
+      SENDGRID_API_KEY: ${SENDGRID_API_KEY:-}
+      AT_USERNAME: ${AT_USERNAME:-sandbox}
+      AT_API_KEY: ${AT_API_KEY:-}
+      ALERT_EMAIL_LIST: ${ALERT_EMAIL_LIST:-admin@eienigeria.org}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    volumes:
+      - ./backend:/app
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+  # ── Celery worker (hotspot scans, background jobs) ────────────────
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: revoda_worker
+    environment:
+      DATABASE_URL: postgresql://revoda:revoda@db/revoda
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      - db
+      - redis
+    command: celery -A tasks worker --loglevel=info --concurrency=4
+
+volumes:
+  revoda_db_data:
+  revoda_redis_data:

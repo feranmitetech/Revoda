@@ -1,0 +1,1550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Revoda — Nigeria Election Intelligence Platform</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&family=Manrope:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --g: #008751; --gl: #00a862; --gd: #005c37;
+  --ink: #060a0c; --ink2: #0c1218; --ink3: #141c22; --ink4: #1c2630;
+  --w: #f0ece4; --w2: #c8c4bc; --m: #7a8a96;
+  --acc: #E8C440; --red: #E53D2E;
+  --bd: rgba(255,255,255,0.07);
+  --r: 12px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { background: var(--ink); color: var(--w); font-family: 'Manrope', sans-serif; font-size: 15px; overflow-x: hidden; }
+
+/* ── NOISE TEXTURE ── */
+body::after {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 999; opacity: 0.5;
+}
+
+/* ── SCREENS ── */
+.screen { display: none; min-height: 100vh; }
+.screen.active { display: flex; flex-direction: column; }
+
+/* ══════════════════════════════════════════════════════════
+   LANDING PAGE
+══════════════════════════════════════════════════════════ */
+
+/* Nav */
+.land-nav {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 20px 48px;
+  border-bottom: 1px solid var(--bd);
+  position: sticky; top: 0;
+  background: rgba(6,10,12,0.92); backdrop-filter: blur(16px);
+  z-index: 100;
+}
+.logo-group { display: flex; align-items: center; gap: 10px; }
+.logo-box { width: 36px; height: 36px; background: var(--g); border-radius: 9px; display: flex; align-items: center; justify-content: center; font-family: 'Syne', sans-serif; font-weight: 800; font-size: 17px; color: #fff; }
+.logo-name { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 19px; letter-spacing: -0.3px; }
+.logo-name em { color: var(--gl); font-style: normal; }
+.nav-links { display: flex; align-items: center; gap: 32px; }
+.nav-link { font-size: 13px; color: var(--m); cursor: pointer; transition: color 0.15s; text-decoration: none; }
+.nav-link:hover { color: var(--w); }
+.nav-cta-group { display: flex; gap: 10px; }
+.btn-ghost { background: none; border: 1px solid var(--bd); border-radius: 8px; padding: 9px 18px; color: var(--w); font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s; font-family: 'Manrope', sans-serif; }
+.btn-ghost:hover { border-color: var(--g); color: var(--gl); }
+.btn-solid { background: var(--g); border: none; border-radius: 8px; padding: 9px 18px; color: #fff; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.15s; font-family: 'Syne', sans-serif; }
+.btn-solid:hover { background: var(--gl); }
+
+/* Hero */
+.hero {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  justify-content: center; padding: 100px 48px 80px;
+  text-align: center; position: relative; overflow: hidden;
+}
+
+/* Animated grid background */
+.hero-grid {
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(0,135,81,0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,135,81,0.06) 1px, transparent 1px);
+  background-size: 60px 60px;
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 50%, black, transparent);
+}
+
+/* Glow orbs */
+.hero::before {
+  content: '';
+  position: absolute; top: 20%; left: 50%; transform: translateX(-50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse, rgba(0,135,81,0.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.hero-eyebrow {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(0,135,81,0.1); border: 1px solid rgba(0,135,81,0.25);
+  border-radius: 20px; padding: 6px 14px;
+  font-family: 'DM Mono', monospace; font-size: 11px; color: var(--gl);
+  letter-spacing: 1px; text-transform: uppercase;
+  margin-bottom: 28px; position: relative;
+  animation: fadeUp 0.6s ease both;
+}
+.eyebrow-dot { width: 6px; height: 6px; background: var(--gl); border-radius: 50%; animation: blink 1.5s infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+.hero-title {
+  font-family: 'Syne', sans-serif;
+  font-size: clamp(42px, 6vw, 80px);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -2px;
+  margin-bottom: 12px;
+  position: relative;
+  animation: fadeUp 0.6s ease 0.1s both;
+}
+.hero-title em {
+  font-style: italic;
+  font-family: 'Instrument Serif', serif;
+  color: var(--gl);
+  font-weight: 400;
+}
+
+.hero-sub {
+  font-size: 18px; color: var(--m); max-width: 560px; line-height: 1.65;
+  margin-bottom: 44px; position: relative;
+  animation: fadeUp 0.6s ease 0.2s both;
+}
+
+.hero-actions {
+  display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;
+  position: relative; animation: fadeUp 0.6s ease 0.3s both;
+}
+.btn-hero-primary {
+  background: var(--g); color: #fff; border: none;
+  padding: 15px 32px; border-radius: 10px;
+  font-family: 'Syne', sans-serif; font-weight: 700; font-size: 15px;
+  cursor: pointer; transition: all 0.2s;
+  display: flex; align-items: center; gap: 8px;
+}
+.btn-hero-primary:hover { background: var(--gl); transform: translateY(-2px); box-shadow: 0 8px 32px rgba(0,135,81,0.3); }
+.btn-hero-secondary {
+  background: rgba(255,255,255,0.05); color: var(--w); border: 1px solid var(--bd);
+  padding: 15px 32px; border-radius: 10px;
+  font-family: 'Manrope', sans-serif; font-weight: 600; font-size: 15px;
+  cursor: pointer; transition: all 0.2s;
+}
+.btn-hero-secondary:hover { border-color: rgba(255,255,255,0.2); background: rgba(255,255,255,0.08); }
+
+/* Trust badges */
+.trust-strip {
+  display: flex; align-items: center; gap: 32px; margin-top: 60px;
+  flex-wrap: wrap; justify-content: center;
+  position: relative; animation: fadeUp 0.6s ease 0.4s both;
+}
+.trust-item { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--m); }
+.trust-icon { font-size: 16px; }
+
+@keyframes fadeUp { from { opacity:0; transform: translateY(20px); } to { opacity:1; transform: none; } }
+
+/* Features section */
+.features {
+  padding: 100px 48px;
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
+  max-width: 1100px; margin: 0 auto; width: 100%;
+}
+.feat-card {
+  background: var(--ink2); border: 1px solid var(--bd); border-radius: 16px;
+  padding: 28px; transition: all 0.2s;
+}
+.feat-card:hover { border-color: rgba(0,135,81,0.4); transform: translateY(-3px); }
+.feat-icon { font-size: 28px; margin-bottom: 16px; }
+.feat-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 16px; margin-bottom: 10px; }
+.feat-desc { font-size: 13px; color: var(--m); line-height: 1.65; }
+
+/* Who it's for */
+.roles-section {
+  padding: 80px 48px; max-width: 1100px; margin: 0 auto; width: 100%;
+}
+.section-eyebrow { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--gl); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 14px; }
+.section-title { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 36px; letter-spacing: -1px; margin-bottom: 40px; }
+.roles-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.role-card {
+  background: var(--ink2); border: 1px solid var(--bd); border-radius: 14px;
+  padding: 22px; cursor: pointer; transition: all 0.2s;
+}
+.role-card:hover { border-color: var(--g); background: rgba(0,135,81,0.06); }
+.role-icon { font-size: 32px; margin-bottom: 12px; }
+.role-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 14px; margin-bottom: 6px; }
+.role-desc { font-size: 12px; color: var(--m); line-height: 1.6; }
+.role-tag { display: inline-block; margin-top: 12px; font-size: 10px; font-family: 'DM Mono', monospace; padding: 3px 8px; border-radius: 4px; background: rgba(0,135,81,0.12); color: var(--gl); }
+
+/* Stats bar */
+.stats-bar {
+  border-top: 1px solid var(--bd); border-bottom: 1px solid var(--bd);
+  padding: 48px; display: flex; justify-content: center; gap: 80px;
+  flex-wrap: wrap;
+}
+.stat-item { text-align: center; }
+.stat-big { font-family: 'Syne', sans-serif; font-size: 48px; font-weight: 800; color: var(--gl); line-height: 1; }
+.stat-small { font-size: 13px; color: var(--m); margin-top: 6px; }
+
+/* Footer */
+.land-footer {
+  padding: 40px 48px; border-top: 1px solid var(--bd);
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 16px;
+}
+.footer-brand { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 15px; }
+.footer-brand em { color: var(--gl); font-style: normal; }
+.footer-copy { font-size: 12px; color: var(--m); }
+
+/* ══════════════════════════════════════════════════════════
+   AUTH PAGES (Register / Login)
+══════════════════════════════════════════════════════════ */
+.auth-screen {
+  min-height: 100vh; display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+@media (max-width: 768px) { .auth-screen { grid-template-columns: 1fr; } .auth-left { display: none; } }
+
+.auth-left {
+  background: var(--ink2);
+  border-right: 1px solid var(--bd);
+  padding: 48px; display: flex; flex-direction: column;
+  position: relative; overflow: hidden;
+}
+.auth-left-grid {
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(0,135,81,0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,135,81,0.05) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+.auth-left-content { position: relative; flex: 1; display: flex; flex-direction: column; }
+.auth-left-logo { display: flex; align-items: center; gap: 10px; margin-bottom: auto; }
+.auth-left-quote {
+  margin-bottom: 40px;
+}
+.quote-text {
+  font-family: 'Instrument Serif', serif; font-style: italic;
+  font-size: 22px; line-height: 1.5; color: var(--w2); margin-bottom: 10px;
+}
+.quote-source { font-size: 12px; color: var(--m); font-family: 'DM Mono', monospace; }
+.auth-left-stats { display: flex; gap: 24px; }
+.auth-stat { }
+.auth-stat-num { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800; color: var(--gl); }
+.auth-stat-label { font-size: 11px; color: var(--m); }
+
+.auth-right {
+  padding: 48px; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+}
+.auth-form-wrap { width: 100%; max-width: 420px; }
+.auth-back { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--m); cursor: pointer; margin-bottom: 36px; transition: color 0.15s; background: none; border: none; font-family: 'Manrope', sans-serif; }
+.auth-back:hover { color: var(--w); }
+.auth-title { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 28px; letter-spacing: -0.5px; margin-bottom: 6px; }
+.auth-subtitle { font-size: 13px; color: var(--m); margin-bottom: 32px; line-height: 1.5; }
+
+/* Form elements */
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+.field-label { font-size: 11px; font-weight: 600; color: var(--m); text-transform: uppercase; letter-spacing: 0.5px; font-family: 'DM Mono', monospace; }
+.field-label.required::after { content: ' *'; color: var(--red); }
+.field-input, .field-select {
+  background: rgba(255,255,255,0.04); border: 1px solid var(--bd);
+  border-radius: 9px; padding: 12px 14px; color: var(--w);
+  font-family: 'Manrope', sans-serif; font-size: 14px;
+  transition: border-color 0.15s, box-shadow 0.15s; width: 100%;
+  -webkit-appearance: none;
+}
+.field-input:focus, .field-select:focus {
+  outline: none; border-color: var(--g);
+  box-shadow: 0 0 0 3px rgba(0,135,81,0.12);
+}
+.field-input::placeholder { color: var(--m); opacity: 0.6; }
+.field-select option { background: #141c22; }
+.field-input.error { border-color: var(--red); }
+.field-error { font-size: 11px; color: #ff6b5b; margin-top: -10px; margin-bottom: 4px; display: none; }
+.field-error.show { display: block; }
+
+/* Password toggle */
+.field-pw-wrap { position: relative; }
+.field-pw-wrap .field-input { padding-right: 44px; }
+.pw-toggle { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--m); cursor: pointer; font-size: 16px; padding: 4px; }
+
+/* Account type selector */
+.account-types { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+.acct-type {
+  border: 2px solid var(--bd); border-radius: 10px; padding: 14px 12px;
+  cursor: pointer; transition: all 0.15s; text-align: center;
+  background: rgba(255,255,255,0.02);
+}
+.acct-type:hover { border-color: rgba(0,135,81,0.4); }
+.acct-type.selected { border-color: var(--g); background: rgba(0,135,81,0.08); }
+.acct-type-icon { font-size: 22px; margin-bottom: 6px; }
+.acct-type-name { font-size: 12px; font-weight: 700; }
+.acct-type-desc { font-size: 10px; color: var(--m); margin-top: 2px; }
+.acct-type.selected .acct-type-name { color: var(--gl); }
+
+/* Submit button */
+.btn-auth {
+  width: 100%; padding: 14px; border-radius: 9px;
+  background: var(--g); border: none; color: #fff;
+  font-family: 'Syne', sans-serif; font-weight: 700; font-size: 15px;
+  cursor: pointer; transition: all 0.2s; margin-top: 8px;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.btn-auth:hover { background: var(--gl); }
+.btn-auth:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-auth.loading { background: var(--gd); }
+
+/* Spinner */
+.spinner { width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; display: none; }
+.btn-auth.loading .spinner { display: block; }
+.btn-auth.loading .btn-label { display: none; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Divider */
+.auth-divider { display: flex; align-items: center; gap: 12px; margin: 20px 0; }
+.divider-line { flex: 1; height: 1px; background: var(--bd); }
+.divider-text { font-size: 11px; color: var(--m); font-family: 'DM Mono', monospace; }
+
+/* Switch link */
+.auth-switch { text-align: center; margin-top: 20px; font-size: 13px; color: var(--m); }
+.auth-switch a { color: var(--gl); cursor: pointer; font-weight: 600; text-decoration: none; }
+
+/* OTP verification step */
+.otp-wrap { text-align: center; }
+.otp-inputs { display: flex; gap: 10px; justify-content: center; margin: 24px 0; }
+.otp-input {
+  width: 52px; height: 60px; background: rgba(255,255,255,0.04);
+  border: 1px solid var(--bd); border-radius: 10px;
+  text-align: center; font-size: 24px; font-weight: 700;
+  color: var(--w); font-family: 'Syne', sans-serif;
+  transition: border-color 0.15s;
+}
+.otp-input:focus { outline: none; border-color: var(--g); box-shadow: 0 0 0 3px rgba(0,135,81,0.12); }
+
+/* Terms checkbox */
+.terms-row { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 16px; }
+.terms-checkbox { width: 18px; height: 18px; accent-color: var(--g); flex-shrink: 0; margin-top: 2px; cursor: pointer; }
+.terms-text { font-size: 12px; color: var(--m); line-height: 1.5; }
+.terms-text a { color: var(--gl); cursor: pointer; }
+
+/* Verification pending notice */
+.verify-notice {
+  background: rgba(232,196,64,0.08); border: 1px solid rgba(232,196,64,0.25);
+  border-radius: 10px; padding: 14px; font-size: 12px; color: var(--acc);
+  line-height: 1.6; margin-bottom: 16px; display: flex; gap: 10px;
+}
+
+/* Step progress */
+.step-progress { display: flex; align-items: center; gap: 6px; margin-bottom: 28px; }
+.step-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ink4); transition: all 0.3s; }
+.step-dot.done { background: var(--gd); width: 20px; border-radius: 4px; }
+.step-dot.active { background: var(--g); width: 20px; border-radius: 4px; }
+
+/* ══════════════════════════════════════════════════════════
+   USER DASHBOARD
+══════════════════════════════════════════════════════════ */
+.dashboard-screen {
+  display: none; min-height: 100vh;
+  grid-template-rows: 56px 1fr;
+  grid-template-columns: 220px 1fr;
+}
+.dashboard-screen.active { display: grid; }
+
+/* Dashboard nav */
+.dash-nav {
+  grid-column: 1 / -1; display: flex; align-items: center;
+  padding: 0 24px; border-bottom: 1px solid var(--bd);
+  background: rgba(6,10,12,0.95); backdrop-filter: blur(12px);
+  z-index: 50; gap: 16px;
+}
+.dash-nav-logo { display: flex; align-items: center; gap: 8px; }
+.dash-user-pill {
+  margin-left: auto; display: flex; align-items: center; gap: 10px;
+  background: var(--ink3); border: 1px solid var(--bd); border-radius: 8px;
+  padding: 6px 12px 6px 8px; cursor: pointer;
+}
+.user-avatar { width: 28px; height: 28px; background: var(--g); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; color: #fff; }
+.user-name { font-size: 13px; font-weight: 600; }
+.user-role { font-size: 10px; color: var(--gl); font-family: 'DM Mono', monospace; }
+.dash-notif { position: relative; }
+.notif-btn { background: var(--ink3); border: 1px solid var(--bd); border-radius: 8px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; }
+.notif-badge { position: absolute; top: -4px; right: -4px; width: 16px; height: 16px; background: var(--red); border-radius: 50%; font-size: 9px; display: flex; align-items: center; justify-content: center; font-weight: 700; border: 2px solid var(--ink); }
+
+/* Dashboard sidebar */
+.dash-sidebar {
+  background: var(--ink2); border-right: 1px solid var(--bd);
+  padding: 20px 14px; display: flex; flex-direction: column; gap: 4px;
+  overflow-y: auto;
+}
+.dash-section-label { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--m); text-transform: uppercase; letter-spacing: 1.5px; padding: 0 10px; margin: 14px 0 6px; }
+.dash-nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 10px; border-radius: 8px; cursor: pointer;
+  transition: all 0.12s; border: 1px solid transparent;
+  font-size: 13px; font-weight: 500; color: var(--m);
+}
+.dash-nav-item:hover { background: var(--ink3); color: var(--w); }
+.dash-nav-item.active { background: rgba(0,135,81,0.1); border-color: rgba(0,135,81,0.3); color: var(--gl); }
+.dash-nav-icon { font-size: 16px; width: 22px; text-align: center; }
+.dash-nav-badge { margin-left: auto; background: var(--red); color: #fff; font-size: 9px; padding: 1px 5px; border-radius: 4px; font-family: 'DM Mono', monospace; }
+
+/* Dashboard main */
+.dash-main { overflow-y: auto; padding: 28px; background: var(--ink); }
+.dash-page { display: none; }
+.dash-page.active { display: block; }
+.dash-page-title { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 22px; letter-spacing: -0.3px; margin-bottom: 4px; }
+.dash-page-sub { font-size: 12px; color: var(--m); font-family: 'DM Mono', monospace; margin-bottom: 28px; }
+
+/* Stat cards */
+.dash-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 28px; }
+.dash-stat {
+  background: var(--ink2); border: 1px solid var(--bd); border-radius: 12px;
+  padding: 18px; transition: border-color 0.2s;
+}
+.dash-stat:hover { border-color: rgba(0,135,81,0.4); }
+.dash-stat-num { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800; line-height: 1; margin-bottom: 6px; }
+.dash-stat-label { font-size: 11px; color: var(--m); }
+.dash-stat-trend { font-size: 11px; margin-top: 8px; font-family: 'DM Mono', monospace; }
+.trend-up { color: var(--gl); }
+.trend-down { color: #ff6b5b; }
+
+/* Recent activity table */
+.dash-card { background: var(--ink2); border: 1px solid var(--bd); border-radius: 12px; overflow: hidden; margin-bottom: 20px; }
+.dash-card-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--bd); }
+.dash-card-title { font-size: 13px; font-weight: 700; }
+.dash-card-action { font-size: 11px; color: var(--gl); cursor: pointer; font-family: 'DM Mono', monospace; background: none; border: none; font-family: inherit; }
+
+table { width: 100%; border-collapse: collapse; }
+thead tr { background: var(--ink3); }
+th { padding: 10px 16px; text-align: left; font-size: 10px; font-family: 'DM Mono', monospace; text-transform: uppercase; letter-spacing: 0.8px; color: var(--m); font-weight: 500; border-bottom: 1px solid var(--bd); }
+td { padding: 12px 16px; font-size: 12px; border-bottom: 1px solid rgba(255,255,255,0.04); vertical-align: middle; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: rgba(255,255,255,0.015); }
+
+/* Badges */
+.badge { font-size: 9px; font-weight: 700; padding: 3px 7px; border-radius: 4px; font-family: 'DM Mono', monospace; text-transform: uppercase; }
+.badge-esc { background: rgba(229,61,46,0.15); color: #ff6b5b; }
+.badge-ver { background: rgba(0,135,81,0.15); color: var(--gl); }
+.badge-unv { background: rgba(232,196,64,0.15); color: var(--acc); }
+.badge-pending { background: rgba(61,139,205,0.15); color: #5ba3d9; }
+
+/* Report form inside dashboard */
+.submit-report-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.submit-report-form { background: var(--ink2); border: 1px solid var(--bd); border-radius: 12px; padding: 24px; }
+.submit-report-guide { background: var(--ink2); border: 1px solid var(--bd); border-radius: 12px; padding: 24px; }
+.guide-step { display: flex; gap: 12px; margin-bottom: 20px; }
+.guide-step-num { width: 28px; height: 28px; background: rgba(0,135,81,0.15); border: 1px solid rgba(0,135,81,0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: var(--gl); flex-shrink: 0; }
+.guide-step-title { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+.guide-step-desc { font-size: 12px; color: var(--m); line-height: 1.5; }
+.anon-note { background: rgba(0,135,81,0.06); border: 1px solid rgba(0,135,81,0.2); border-radius: 8px; padding: 12px; font-size: 12px; color: var(--gl); line-height: 1.5; display: flex; gap: 8px; margin-top: 16px; }
+
+/* Profile page */
+.profile-grid { display: grid; grid-template-columns: 280px 1fr; gap: 20px; }
+.profile-card { background: var(--ink2); border: 1px solid var(--bd); border-radius: 12px; padding: 28px; text-align: center; }
+.profile-avatar { width: 80px; height: 80px; background: var(--g); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'Syne', sans-serif; font-weight: 800; font-size: 32px; color: #fff; margin: 0 auto 16px; }
+.profile-name { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 18px; margin-bottom: 4px; }
+.profile-org { font-size: 13px; color: var(--m); margin-bottom: 8px; }
+.profile-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(0,135,81,0.1); border: 1px solid rgba(0,135,81,0.25); border-radius: 20px; padding: 5px 12px; font-size: 11px; color: var(--gl); font-family: 'DM Mono', monospace; margin-bottom: 20px; }
+.profile-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
+.profile-stat { background: var(--ink3); border-radius: 8px; padding: 12px; text-align: center; }
+.profile-stat-num { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800; color: var(--gl); }
+.profile-stat-label { font-size: 10px; color: var(--m); font-family: 'DM Mono', monospace; margin-top: 2px; }
+
+/* Token display */
+.api-token-box { background: var(--ink3); border: 1px solid var(--bd); border-radius: 8px; padding: 12px 14px; font-family: 'DM Mono', monospace; font-size: 12px; color: var(--m); display: flex; align-items: center; justify-content: space-between; margin-top: 8px; word-break: break-all; }
+.copy-btn { background: none; border: 1px solid var(--bd); border-radius: 5px; padding: 4px 8px; color: var(--m); font-size: 10px; cursor: pointer; white-space: nowrap; margin-left: 10px; font-family: 'DM Mono', monospace; transition: all 0.15s; flex-shrink: 0; }
+.copy-btn:hover { border-color: var(--g); color: var(--gl); }
+
+/* Approval status banner */
+.approval-banner {
+  background: rgba(232,196,64,0.08); border: 1px solid rgba(232,196,64,0.25);
+  border-radius: 10px; padding: 16px 20px; margin-bottom: 24px;
+  display: flex; align-items: center; gap: 14px;
+}
+.approval-icon { font-size: 24px; flex-shrink: 0; }
+.approval-title { font-size: 14px; font-weight: 700; color: var(--acc); margin-bottom: 3px; }
+.approval-desc { font-size: 12px; color: var(--m); line-height: 1.5; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-thumb { background: var(--ink4); border-radius: 2px; }
+
+/* Responsive */
+@media (max-width: 900px) {
+  .features { grid-template-columns: 1fr; padding: 60px 24px; }
+  .roles-grid { grid-template-columns: 1fr 1fr; }
+  .land-nav { padding: 16px 24px; }
+  .land-nav .nav-links { display: none; }
+  .hero { padding: 60px 24px; }
+  .dash-stats { grid-template-columns: 1fr 1fr; }
+  .submit-report-grid { grid-template-columns: 1fr; }
+  .profile-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════
+     SCREEN 1: LANDING PAGE
+══════════════════════════════════════════════════════════ -->
+<div class="screen active" id="screen-landing">
+
+  <nav class="land-nav">
+    <div class="logo-group">
+      <div class="logo-box">R</div>
+      <div class="logo-name">Re<em>Vo</em>Da</div>
+    </div>
+    <div class="nav-links">
+      <a class="nav-link">About</a>
+      <a class="nav-link">How It Works</a>
+      <a class="nav-link">Partners</a>
+      <a class="nav-link">Contact EiE</a>
+    </div>
+    <div class="nav-cta-group">
+      <button class="btn-ghost" onclick="showScreen('screen-login')">Log In</button>
+      <button class="btn-solid" onclick="showScreen('screen-register')">Join as Partner →</button>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-grid"></div>
+    <div class="hero-eyebrow"><span class="eyebrow-dot"></span> EiE Nigeria · Civic Intelligence Platform</div>
+    <h1 class="hero-title">Nigeria's Election<br><em>Incident Intelligence</em><br>Platform</h1>
+    <p class="hero-sub">Revoda transforms citizen reports and observer data into verified, actionable intelligence — making election problems impossible to ignore.</p>
+    <div class="hero-actions">
+      <button class="btn-hero-primary" onclick="showScreen('screen-register')">🛡️ Join as a Partner</button>
+      <button class="btn-hero-secondary" onclick="showScreen('screen-login')">View Live Dashboard →</button>
+    </div>
+    <div class="trust-strip">
+      <div class="trust-item"><span class="trust-icon">🔒</span> Full anonymisation</div>
+      <div class="trust-item"><span class="trust-icon">✅</span> Partner-verified reports</div>
+      <div class="trust-item"><span class="trust-icon">🗺️</span> All 36 States + FCT</div>
+      <div class="trust-item"><span class="trust-icon">⚡</span> Real-time alerts</div>
+      <div class="trust-item"><span class="trust-icon">📱</span> Works on feature phones</div>
+    </div>
+  </section>
+
+  <!-- Stats bar -->
+  <div class="stats-bar">
+    <div class="stat-item"><div class="stat-big">37</div><div class="stat-small">States Covered</div></div>
+    <div class="stat-item"><div class="stat-big">120k+</div><div class="stat-small">Polling Units Monitored</div></div>
+    <div class="stat-item"><div class="stat-big">12</div><div class="stat-small">Partner Organisations</div></div>
+    <div class="stat-item"><div class="stat-big">94%</div><div class="stat-small">Verification Rate</div></div>
+  </div>
+
+  <!-- Features -->
+  <section class="features">
+    <div class="feat-card">
+      <div class="feat-icon">📍</div>
+      <div class="feat-title">Real-Time Incident Map</div>
+      <div class="feat-desc">Interactive Nigeria map showing live incidents across all 774 LGAs, with heat maps and hotspot clustering as they happen.</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">✅</div>
+      <div class="feat-title">Partner Verification</div>
+      <div class="feat-desc">Every report is reviewed by trained partner organisations before being marked verified — no misinformation reaches the public dashboard.</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">⚡</div>
+      <div class="feat-title">Escalation Alerts</div>
+      <div class="feat-desc">Hotspot detection automatically flags dangerous clusters and sends SMS + email alerts to security and election officials.</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">🔒</div>
+      <div class="feat-title">Full Anonymisation</div>
+      <div class="feat-desc">Reporter identity is hashed before any data touches the database. No phone numbers, no names — ever stored.</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">📊</div>
+      <div class="feat-title">Evidence Archive</div>
+      <div class="feat-desc">Every verified incident becomes part of Nigeria's permanent election history — available for courts, researchers, and reform advocacy.</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">📱</div>
+      <div class="feat-title">SMS & USSD Access</div>
+      <div class="feat-desc">Citizens without smartphones can report via SMS or USSD shortcode. No internet required — maximum reach across Nigeria.</div>
+    </div>
+  </section>
+
+  <!-- Who it's for -->
+  <section class="roles-section">
+    <div class="section-eyebrow">Who joins Revoda</div>
+    <div class="section-title">Built for every voice<br>in Nigeria's democracy</div>
+    <div class="roles-grid">
+      <div class="role-card" onclick="showScreen('screen-register')">
+        <div class="role-icon">🏛️</div>
+        <div class="role-title">CSO / Observer Groups</div>
+        <div class="role-desc">Submit and verify incident reports. Access full dashboard and analytics for your organisation.</div>
+        <div class="role-tag">Verify · Escalate · Export</div>
+      </div>
+      <div class="role-card" onclick="showScreen('screen-register')">
+        <div class="role-icon">📰</div>
+        <div class="role-title">Media Houses</div>
+        <div class="role-desc">Access verified incident data for reporting. Get real-time alerts on escalated incidents.</div>
+        <div class="role-tag">Read · Report · Alert</div>
+      </div>
+      <div class="role-card" onclick="showScreen('screen-register')">
+        <div class="role-icon">🎓</div>
+        <div class="role-title">Academic Researchers</div>
+        <div class="role-desc">Export historical data, compare election cycles, and access anonymised datasets for research.</div>
+        <div class="role-tag">Data · Analysis · Archive</div>
+      </div>
+      <div class="role-card" onclick="showScreen('screen-register')">
+        <div class="role-icon">⚖️</div>
+        <div class="role-title">Legal / INEC Partners</div>
+        <div class="role-desc">Access evidence archives with full incident documentation for legal proceedings and official reviews.</div>
+        <div class="role-tag">Evidence · Audit · Reform</div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="land-footer">
+    <div class="footer-brand">Re<em>Vo</em>Da by EiE Nigeria</div>
+    <div class="footer-copy">© 2027 Enough is Enough Nigeria · All incident data anonymised · Built for Nigerian democracy</div>
+  </footer>
+
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     SCREEN 2: REGISTER
+══════════════════════════════════════════════════════════ -->
+<div class="screen" id="screen-register">
+<div class="auth-screen">
+
+  <!-- Left panel -->
+  <div class="auth-left">
+    <div class="auth-left-grid"></div>
+    <div class="auth-left-content">
+      <div class="auth-left-logo">
+        <div class="logo-box">R</div>
+        <div class="logo-name">Re<em>Vo</em>Da</div>
+      </div>
+      <div class="auth-left-quote">
+        <div class="quote-text">"O God of creation, direct our noble cause. Guide our leaders right; help our youth to know the truth."</div>
+        <div class="quote-source">— 2nd Stanza, Nigeria's National Anthem</div>
+      </div>
+      <div class="auth-left-stats">
+        <div class="auth-stat"><div class="auth-stat-num">12</div><div class="auth-stat-label">Active Partners</div></div>
+        <div class="auth-stat"><div class="auth-stat-num">1,247</div><div class="auth-stat-label">Verified Reports</div></div>
+        <div class="auth-stat"><div class="auth-stat-num">37</div><div class="auth-stat-label">States Covered</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right: Register form -->
+  <div class="auth-right">
+    <div class="auth-form-wrap">
+      <button class="auth-back" onclick="showScreen('screen-landing')">← Back to home</button>
+
+      <!-- Step indicators -->
+      <div class="step-progress" id="reg-steps">
+        <div class="step-dot active" id="step1-dot"></div>
+        <div class="step-dot" id="step2-dot"></div>
+        <div class="step-dot" id="step3-dot"></div>
+      </div>
+
+      <!-- STEP 1: Account type -->
+      <div id="reg-step1">
+        <div class="auth-title">Create your account</div>
+        <div class="auth-subtitle">Join Revoda as a verified partner organisation. All accounts are reviewed by EiE Nigeria before activation.</div>
+
+        <div style="font-size:12px;color:var(--m);margin-bottom:12px;font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:0.5px">I am joining as a...</div>
+        <div class="account-types">
+          <div class="acct-type" onclick="selectAccountType(this,'cso')">
+            <div class="acct-type-icon">🏛️</div>
+            <div class="acct-type-name">CSO / Observer</div>
+            <div class="acct-type-desc">Civil society or observer group</div>
+          </div>
+          <div class="acct-type" onclick="selectAccountType(this,'media')">
+            <div class="acct-type-icon">📰</div>
+            <div class="acct-type-name">Media House</div>
+            <div class="acct-type-desc">News organisation or journalist</div>
+          </div>
+          <div class="acct-type" onclick="selectAccountType(this,'academic')">
+            <div class="acct-type-icon">🎓</div>
+            <div class="acct-type-name">Academic</div>
+            <div class="acct-type-desc">University or research institution</div>
+          </div>
+          <div class="acct-type" onclick="selectAccountType(this,'legal')">
+            <div class="acct-type-icon">⚖️</div>
+            <div class="acct-type-name">Legal / INEC</div>
+            <div class="acct-type-desc">Legal body or government partner</div>
+          </div>
+        </div>
+
+        <button class="btn-auth" id="btn-step1" disabled onclick="goRegStep(2)">
+          <span class="btn-label">Continue →</span>
+        </button>
+        <div class="auth-switch">Already have an account? <a onclick="showScreen('screen-login')">Log in</a></div>
+      </div>
+
+      <!-- STEP 2: Organisation & personal details -->
+      <div id="reg-step2" style="display:none">
+        <div class="auth-title">Organisation details</div>
+        <div class="auth-subtitle">Tell us about your organisation so we can verify your account.</div>
+
+        <div class="form-row">
+          <div class="field">
+            <label class="field-label required">First Name</label>
+            <input class="field-input" id="reg-fname" type="text" placeholder="Ada" oninput="checkStep2()">
+          </div>
+          <div class="field">
+            <label class="field-label required">Last Name</label>
+            <input class="field-input" id="reg-lname" type="text" placeholder="Okafor" oninput="checkStep2()">
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label required">Organisation Name</label>
+          <input class="field-input" id="reg-org" type="text" placeholder="e.g. YIAGA Africa, NTA Lagos..." oninput="checkStep2()">
+        </div>
+
+        <div class="field">
+          <label class="field-label required">Official Email Address</label>
+          <input class="field-input" id="reg-email" type="email" placeholder="ada@yourorg.org" oninput="checkStep2()">
+          <div class="field-error" id="email-err">Please enter a valid email address</div>
+        </div>
+
+        <div class="field">
+          <label class="field-label required">Phone Number</label>
+          <input class="field-input" id="reg-phone" type="tel" placeholder="+234 80 0000 0000" oninput="checkStep2()">
+        </div>
+
+        <div class="field">
+          <label class="field-label required">State of Operation</label>
+          <select class="field-select" id="reg-state" onchange="checkStep2()">
+            <option value="">Select primary state...</option>
+            <option>National (All States)</option>
+            <option>Abia</option><option>Adamawa</option><option>Akwa Ibom</option><option>Anambra</option><option>Bauchi</option><option>Bayelsa</option><option>Benue</option><option>Borno</option><option>Cross River</option><option>Delta</option><option>Ebonyi</option><option>Edo</option><option>Ekiti</option><option>Enugu</option><option>FCT</option><option>Gombe</option><option>Imo</option><option>Jigawa</option><option>Kaduna</option><option>Kano</option><option>Katsina</option><option>Kebbi</option><option>Kogi</option><option>Kwara</option><option>Lagos</option><option>Nasarawa</option><option>Niger</option><option>Ogun</option><option>Ondo</option><option>Osun</option><option>Oyo</option><option>Plateau</option><option>Rivers</option><option>Sokoto</option><option>Taraba</option><option>Yobe</option><option>Zamfara</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label class="field-label required">Password</label>
+          <div class="field-pw-wrap">
+            <input class="field-input" id="reg-pw" type="password" placeholder="Minimum 8 characters" oninput="checkStep2()">
+            <button class="pw-toggle" onclick="togglePw('reg-pw', this)" type="button">👁</button>
+          </div>
+        </div>
+
+        <div class="terms-row">
+          <input type="checkbox" class="terms-checkbox" id="terms-cb" onchange="checkStep2()">
+          <label class="terms-text" for="terms-cb">I agree to the <a>Terms of Use</a> and <a>Privacy Policy</a>. I confirm that the information provided is accurate and I represent the organisation named above.</label>
+        </div>
+
+        <button class="btn-auth" id="btn-step2" disabled onclick="goRegStep(3)">
+          <span class="btn-label">Create Account →</span>
+          <div class="spinner"></div>
+        </button>
+      </div>
+
+      <!-- STEP 3: Pending approval -->
+      <div id="reg-step3" style="display:none">
+        <div style="text-align:center;padding:20px 0">
+          <div style="font-size:52px;margin-bottom:20px">🎉</div>
+          <div class="auth-title">Account Created!</div>
+          <div class="auth-subtitle" style="margin-top:8px">Your account has been submitted for review by EiE Nigeria. You'll receive an email within 24–48 hours once approved.</div>
+
+          <div class="verify-notice" style="text-align:left;margin:24px 0">
+            <span>⏳</span>
+            <span><strong>What happens next:</strong> EiE Nigeria will verify your organisation credentials. Once approved, you'll receive your partner API token and full dashboard access.</span>
+          </div>
+
+          <div style="background:var(--ink3);border:1px solid var(--bd);border-radius:10px;padding:16px;margin-bottom:24px">
+            <div style="font-size:11px;color:var(--m);font-family:'DM Mono',monospace;margin-bottom:8px">YOUR APPLICATION ID</div>
+            <div style="font-family:'DM Mono',monospace;font-size:16px;color:var(--gl);letter-spacing:2px" id="app-id">RVD-APP-XXXXXX</div>
+          </div>
+
+          <button class="btn-auth" onclick="showDashboard(true)">
+            <span class="btn-label">Go to My Dashboard →</span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     SCREEN 3: LOGIN
+══════════════════════════════════════════════════════════ -->
+<div class="screen" id="screen-login">
+<div class="auth-screen">
+
+  <div class="auth-left">
+    <div class="auth-left-grid"></div>
+    <div class="auth-left-content">
+      <div class="auth-left-logo">
+        <div class="logo-box">R</div>
+        <div class="logo-name">Re<em>Vo</em>Da</div>
+      </div>
+      <div class="auth-left-quote">
+        <div class="quote-text">"It makes election problems impossible to ignore through trusted documentation and transparent verification."</div>
+        <div class="quote-source">— Revoda Mission Statement · EiE Nigeria</div>
+      </div>
+      <div class="auth-left-stats">
+        <div class="auth-stat"><div class="auth-stat-num">37</div><div class="auth-stat-label">States Active</div></div>
+        <div class="auth-stat"><div class="auth-stat-num">1,247</div><div class="auth-stat-label">Verified Reports</div></div>
+        <div class="auth-stat"><div class="auth-stat-num">37</div><div class="auth-stat-label">Escalated</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="auth-right">
+    <div class="auth-form-wrap">
+      <button class="auth-back" onclick="showScreen('screen-landing')">← Back to home</button>
+      <div class="auth-title">Welcome back</div>
+      <div class="auth-subtitle">Log in to your Revoda partner account to submit reports and access your dashboard.</div>
+
+      <div class="field">
+        <label class="field-label required">Email Address</label>
+        <input class="field-input" id="login-email" type="email" placeholder="you@yourorg.org" oninput="checkLogin()">
+      </div>
+
+      <div class="field">
+        <label class="field-label required">Password</label>
+        <div class="field-pw-wrap">
+          <input class="field-input" id="login-pw" type="password" placeholder="Your password" oninput="checkLogin()">
+          <button class="pw-toggle" onclick="togglePw('login-pw', this)" type="button">👁</button>
+        </div>
+      </div>
+
+      <div style="text-align:right;margin:-8px 0 16px">
+        <a style="font-size:12px;color:var(--gl);cursor:pointer">Forgot password?</a>
+      </div>
+
+      <button class="btn-auth" id="btn-login" onclick="doLogin()">
+        <span class="btn-label">Log In →</span>
+        <div class="spinner"></div>
+      </button>
+
+      <!-- Demo shortcut -->
+      <div style="background:rgba(0,135,81,0.06);border:1px solid rgba(0,135,81,0.2);border-radius:8px;padding:12px;margin-top:16px;font-size:12px;color:var(--m);line-height:1.5">
+        <strong style="color:var(--gl)">Demo mode:</strong> Enter any email + password to see the partner dashboard. No real account needed for testing.
+      </div>
+
+      <div class="auth-switch">No account yet? <a onclick="showScreen('screen-register')">Register your organisation</a></div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     SCREEN 4: PARTNER DASHBOARD
+══════════════════════════════════════════════════════════ -->
+<div class="dashboard-screen" id="screen-dashboard">
+
+  <!-- Top nav -->
+  <nav class="dash-nav">
+    <div class="dash-nav-logo">
+      <div class="logo-box" style="width:28px;height:28px;font-size:13px">R</div>
+      <div class="logo-name" style="font-size:15px">Re<em>Vo</em>Da</div>
+    </div>
+    <div style="font-size:10px;color:var(--m);font-family:'DM Mono',monospace;margin-left:8px">PARTNER PORTAL</div>
+
+    <div style="margin-left:24px">
+      <span id="dash-live-badge" style="display:inline-flex;align-items:center;gap:5px;background:rgba(229,61,46,0.12);border:1px solid rgba(229,61,46,0.3);border-radius:20px;padding:3px 10px;font-size:10px;font-family:'DM Mono',monospace;color:#ff6b5b">
+        <span style="width:5px;height:5px;background:#E53D2E;border-radius:50%;animation:blink 1.2s infinite"></span>
+        LIVE
+      </span>
+    </div>
+
+    <div class="dash-notif" style="margin-left:auto">
+      <div class="notif-btn">🔔</div>
+      <div class="notif-badge">3</div>
+    </div>
+
+    <div class="dash-user-pill" id="user-pill">
+      <div class="user-avatar" id="user-avatar">A</div>
+      <div>
+        <div class="user-name" id="user-display-name">Ada Okafor</div>
+        <div class="user-role" id="user-display-org">YIAGA Africa · CSO</div>
+      </div>
+    </div>
+
+    <button onclick="logout()" style="background:none;border:1px solid var(--bd);border-radius:7px;padding:6px 12px;color:var(--m);font-size:12px;cursor:pointer;margin-left:10px;transition:all 0.15s" onmouseover="this.style.borderColor='var(--red)';this.style.color='#ff6b5b'" onmouseout="this.style.borderColor='var(--bd)';this.style.color='var(--m)'">Log out</button>
+  </nav>
+
+  <!-- Sidebar -->
+  <aside class="dash-sidebar">
+    <div class="dash-section-label">Main</div>
+    <div class="dash-nav-item active" onclick="showDashPage('overview', this)"><span class="dash-nav-icon">🏠</span> Overview</div>
+    <div class="dash-nav-item" onclick="showDashPage('submit', this)"><span class="dash-nav-icon">📝</span> Submit Report</div>
+    <div class="dash-nav-item" onclick="showDashPage('my-reports', this)"><span class="dash-nav-icon">📋</span> My Reports <span class="dash-nav-badge">4</span></div>
+    <div class="dash-nav-item" onclick="showDashPage('verify', this)"><span class="dash-nav-icon">✅</span> Verify Incidents</div>
+
+    <div class="dash-section-label">Intelligence</div>
+    <div class="dash-nav-item" onclick="showDashPage('map', this)"><span class="dash-nav-icon">🗺️</span> Live Map</div>
+    <div class="dash-nav-item" onclick="showDashPage('alerts', this)"><span class="dash-nav-icon">⚡</span> Alerts <span class="dash-nav-badge" style="background:var(--acc);color:#000">3</span></div>
+    <div class="dash-nav-item" onclick="showDashPage('analytics', this)"><span class="dash-nav-icon">📊</span> Analytics</div>
+    <div class="dash-nav-item" onclick="showDashPage('export', this)"><span class="dash-nav-icon">📤</span> Export Data</div>
+
+    <div class="dash-section-label">Account</div>
+    <div class="dash-nav-item" onclick="showDashPage('profile', this)"><span class="dash-nav-icon">👤</span> My Profile</div>
+    <div class="dash-nav-item" onclick="showDashPage('api', this)"><span class="dash-nav-icon">🔑</span> API Access</div>
+  </aside>
+
+  <!-- Main content -->
+  <main class="dash-main">
+
+    <!-- ── OVERVIEW ── -->
+    <div class="dash-page active" id="page-overview">
+      <div class="dash-page-title">Good morning, <span id="dash-greeting-name">Ada</span> 👋</div>
+      <div class="dash-page-sub" id="dash-org-label">YIAGA Africa · Pre-Election Phase · Nigeria 2027</div>
+
+      <!-- Pending approval banner (shown for new users) -->
+      <div class="approval-banner" id="approval-banner" style="display:none">
+        <div class="approval-icon">⏳</div>
+        <div>
+          <div class="approval-title">Account Pending Approval</div>
+          <div class="approval-desc">EiE Nigeria is reviewing your organisation credentials. You can explore your dashboard, but report submission and verification features will be unlocked once approved (usually within 24–48 hours).</div>
+        </div>
+      </div>
+
+      <div class="dash-stats">
+        <div class="dash-stat">
+          <div class="dash-stat-num" style="color:#ff6b5b">1,247</div>
+          <div class="dash-stat-label">Total Incidents (National)</div>
+          <div class="dash-stat-trend trend-up">↑ +38 today</div>
+        </div>
+        <div class="dash-stat">
+          <div class="dash-stat-num" style="color:var(--acc)">384</div>
+          <div class="dash-stat-label">Awaiting Verification</div>
+          <div class="dash-stat-trend trend-down">Needs attention</div>
+        </div>
+        <div class="dash-stat">
+          <div class="dash-stat-num" style="color:var(--gl)" id="my-reports-count">0</div>
+          <div class="dash-stat-label">My Organisation's Reports</div>
+          <div class="dash-stat-trend trend-up">↑ +2 this week</div>
+        </div>
+        <div class="dash-stat">
+          <div class="dash-stat-num" style="color:#3d8bcd">37</div>
+          <div class="dash-stat-label">Escalated Incidents</div>
+          <div class="dash-stat-trend trend-down">⚠ Requires action</div>
+        </div>
+      </div>
+
+      <!-- Recent incidents table -->
+      <div class="dash-card">
+        <div class="dash-card-header">
+          <div class="dash-card-title">Recent National Incidents</div>
+          <button class="dash-card-action" onclick="showDashPage('my-reports', document.querySelector('.dash-nav-item:nth-child(4)'))">View all →</button>
+        </div>
+        <table>
+          <thead><tr><th>ID</th><th>Category</th><th>Location</th><th>Status</th><th>Reported</th></tr></thead>
+          <tbody>
+            <tr><td style="font-family:'DM Mono',monospace;font-size:10px;color:var(--m)">RVD-001</td><td><span class="badge" style="background:rgba(229,61,46,0.15);color:#ff6b5b">Violence</span></td><td>Obio-Akpor, Rivers</td><td><span class="badge badge-esc">Escalated</span></td><td style="font-family:'DM Mono',monospace;font-size:10px;color:var(--m)">09:47 AM</td></tr>
+            <tr><td style="font-family:'DM Mono',monospace;font-size:10px;color:var(--m)">RVD-002</td><td><span class="badge" style="background:rgba(232,196,64,0.15);color:var(--acc)">Materials</span></td><td>Ikeja, Lagos</td><td><span class="badge badge-unv">Unverified</span></td><td style="font-family:'DM Mono',monospace;font-size:10px;color:var(--m)">10:12 AM</td></tr>
+            <tr><td style="font-family:'DM Mono',monospace;font-size:10px;color:var(--m)">RVD-003</td><td><span class="badge" style="background:rgba(0,135,81,0.15);color:var(--gl)">Voting</span></td><td>Oshodi-Isolo, Lagos</td><td><span class="badge badge-ver">Verified</span></td><td style="font-family:'DM Mono',monospace;font-size:10px;color:var(--m)">10:35 AM</td></tr>
+            <tr><td style="font-family:'DM Mono',monospace;font-size:10px;color:var(--m)">RVD-004</td><td><span class="badge" style="background:rgba(61,139,205,0.15);color:#5ba3d9">Police</span></td><td>Gwale, Kano</td><td><span class="badge badge-ver">Verified</span></td><td style="font-family:'DM Mono',monospace;font-size:10px;color:var(--m)">11:02 AM</td></tr>
+            <tr><td style="font-family:'DM Mono',monospace;font-size:10px;color:var(--m)">RVD-005</td><td><span class="badge" style="background:rgba(192,132,252,0.15);color:#c084fc">Results</span></td><td>Bwari, FCT</td><td><span class="badge badge-unv">Unverified</span></td><td style="font-family:'DM Mono',monospace;font-size:10px;color:var(--m)">05:15 PM</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Quick actions -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px">
+        <div class="dash-card" style="cursor:pointer" onclick="showDashPage('submit', null)">
+          <div style="padding:20px;text-align:center">
+            <div style="font-size:32px;margin-bottom:10px">📝</div>
+            <div style="font-size:13px;font-weight:700;margin-bottom:4px">Submit a Report</div>
+            <div style="font-size:11px;color:var(--m)">Log a new incident from your team</div>
+          </div>
+        </div>
+        <div class="dash-card" style="cursor:pointer" onclick="showDashPage('verify', null)">
+          <div style="padding:20px;text-align:center">
+            <div style="font-size:32px;margin-bottom:10px">✅</div>
+            <div style="font-size:13px;font-weight:700;margin-bottom:4px">Verify Incidents</div>
+            <div style="font-size:11px;color:var(--m)">Review 384 pending reports</div>
+          </div>
+        </div>
+        <div class="dash-card" style="cursor:pointer" onclick="showDashPage('export', null)">
+          <div style="padding:20px;text-align:center">
+            <div style="font-size:32px;margin-bottom:10px">📤</div>
+            <div style="font-size:13px;font-weight:700;margin-bottom:4px">Export Data</div>
+            <div style="font-size:11px;color:var(--m)">Download reports for your briefings</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SUBMIT REPORT ── -->
+    <div class="dash-page" id="page-submit">
+      <div class="dash-page-title">Submit Incident Report</div>
+      <div class="dash-page-sub">Reports submitted here are attributed to your organisation and enter the verification queue.</div>
+
+      <div class="submit-report-grid">
+        <div class="submit-report-form">
+          <div class="field">
+            <label class="field-label required">Incident Category</label>
+            <select class="field-select" id="sub-category">
+              <option value="">Select category...</option>
+              <option>⚡ Violence / Thuggery</option>
+              <option>🗳️ Voting Irregularity</option>
+              <option>📦 Material Availability</option>
+              <option>🚔 Police Behaviour</option>
+              <option>🔢 Vote Counting Issue</option>
+              <option>📋 Results Verification</option>
+              <option>⏰ Officials Arrival</option>
+              <option>📢 Result Announcement</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <div class="field">
+              <label class="field-label required">State</label>
+              <select class="field-select" id="sub-state">
+                <option value="">State...</option>
+                <option>Lagos</option><option>Rivers</option><option>Kano</option><option>FCT</option><option>Imo</option><option>Delta</option><option>Kaduna</option><option>Oyo</option><option>Borno</option><option>Enugu</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="field-label">LGA</label>
+              <input class="field-input" placeholder="Local Govt Area">
+            </div>
+          </div>
+          <div class="field">
+            <label class="field-label">Polling Unit Code</label>
+            <input class="field-input" placeholder="e.g. LG-IKJ-031" style="font-family:'DM Mono',monospace;text-transform:uppercase">
+          </div>
+          <div class="field">
+            <label class="field-label required">Description</label>
+            <textarea class="field-input" style="min-height:120px;resize:vertical;line-height:1.6" placeholder="Describe exactly what happened — time, people involved, impact on voters, any witnesses..." id="sub-desc" oninput="checkSubForm()"></textarea>
+          </div>
+          <div class="field">
+            <label class="field-label">Evidence / Media</label>
+            <div style="border:2px dashed var(--bd);border-radius:9px;padding:20px;text-align:center;cursor:pointer" onclick="document.getElementById('sub-media').click()">
+              <div style="font-size:24px;margin-bottom:6px">📎</div>
+              <div style="font-size:12px;color:var(--gl);font-weight:600">Attach photos or videos</div>
+              <div style="font-size:11px;color:var(--m);margin-top:3px">Max 25MB per file</div>
+            </div>
+            <input type="file" id="sub-media" style="display:none" multiple accept="image/*,video/*">
+          </div>
+          <div class="anon-note">🔒 <span>This report will be attributed to <strong id="org-credit">your organisation</strong>. Reporter identity is not individually tracked.</span></div>
+          <button class="btn-auth" style="margin-top:16px" id="sub-btn" onclick="submitReport()">
+            <span class="btn-label">🚀 Submit Report</span>
+            <div class="spinner"></div>
+          </button>
+        </div>
+
+        <div class="submit-report-guide">
+          <div style="font-size:13px;font-weight:700;margin-bottom:20px">How to write a strong report</div>
+          <div class="guide-step">
+            <div class="guide-step-num">1</div>
+            <div><div class="guide-step-title">Be specific about location</div><div class="guide-step-desc">Include the polling unit code if possible. At minimum, include state and LGA.</div></div>
+          </div>
+          <div class="guide-step">
+            <div class="guide-step-num">2</div>
+            <div><div class="guide-step-title">Include exact timing</div><div class="guide-step-desc">Note the time the incident occurred, not just when you're reporting it.</div></div>
+          </div>
+          <div class="guide-step">
+            <div class="guide-step-num">3</div>
+            <div><div class="guide-step-title">Describe the impact</div><div class="guide-step-desc">How many voters were affected? Was voting disrupted? Were officials involved?</div></div>
+          </div>
+          <div class="guide-step">
+            <div class="guide-step-num">4</div>
+            <div><div class="guide-step-title">Attach evidence if possible</div><div class="guide-step-desc">Photos, videos, and screenshots significantly speed up verification.</div></div>
+          </div>
+          <div class="guide-step">
+            <div class="guide-step-num">5</div>
+            <div><div class="guide-step-title">Stay factual</div><div class="guide-step-desc">Only report what you directly witnessed or can verify. False reports harm democracy.</div></div>
+          </div>
+          <div style="background:rgba(229,61,46,0.07);border:1px solid rgba(229,61,46,0.2);border-radius:8px;padding:12px;font-size:11px;color:var(--m);line-height:1.5;margin-top:8px">
+            ⚠ <strong style="color:#ff6b5b">Important:</strong> Submitting false or misleading reports is a violation of Revoda's terms and may result in your organisation's account being suspended.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── MY REPORTS ── -->
+    <div class="dash-page" id="page-my-reports">
+      <div class="dash-page-title">My Organisation's Reports</div>
+      <div class="dash-page-sub">All incidents submitted by your organisation</div>
+      <div class="dash-card">
+        <div class="dash-card-header">
+          <div class="dash-card-title">Submitted Reports</div>
+          <span style="font-size:11px;color:var(--m);font-family:'DM Mono',monospace" id="my-reports-total">0 reports</span>
+        </div>
+        <div id="my-reports-body">
+          <div style="padding:48px;text-align:center;color:var(--m)">
+            <div style="font-size:32px;margin-bottom:12px">📭</div>
+            <div style="font-size:14px;font-weight:600;margin-bottom:6px">No reports yet</div>
+            <div style="font-size:12px">Submit your first incident report to see it here.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── VERIFY ── -->
+    <div class="dash-page" id="page-verify">
+      <div class="dash-page-title">Verify Incidents</div>
+      <div class="dash-page-sub">Review unverified reports and mark them verified, escalated, or dismissed</div>
+      <div class="dash-card">
+        <div class="dash-card-header">
+          <div class="dash-card-title">Pending Verification (384)</div>
+        </div>
+        <table>
+          <thead><tr><th>ID</th><th>Category</th><th>Location</th><th>Description</th><th>Reported by</th><th>Actions</th></tr></thead>
+          <tbody>
+            <tr>
+              <td style="font-family:'DM Mono',monospace;font-size:10px;color:var(--m)">RVD-002</td>
+              <td><span class="badge" style="background:rgba(232,196,64,0.15);color:var(--acc)">Materials</span></td>
+              <td>Ikeja, Lagos</td>
+              <td style="max-width:200px;font-size:11px">BVAS machine malfunction. 200+ voters unable to accredit.</td>
+              <td style="font-size:11px;color:var(--m)">Citizen</td>
+              <td>
+                <div style="display:flex;gap:4px">
+                  <button onclick="verifyAction(this,'verified')" style="font-size:10px;padding:4px 8px;border-radius:5px;border:1px solid rgba(0,135,81,0.4);background:rgba(0,135,81,0.08);color:var(--gl);cursor:pointer;font-family:'DM Mono',monospace">✓ Verify</button>
+                  <button onclick="verifyAction(this,'escalated')" style="font-size:10px;padding:4px 8px;border-radius:5px;border:1px solid rgba(229,61,46,0.3);background:rgba(229,61,46,0.07);color:#ff6b5b;cursor:pointer;font-family:'DM Mono',monospace">⚠ Escalate</button>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td style="font-family:'DM Mono',monospace;font-size:10px;color:var(--m)">RVD-005</td>
+              <td><span class="badge" style="background:rgba(192,132,252,0.15);color:#c084fc">Results</span></td>
+              <td>Bwari, FCT</td>
+              <td style="max-width:200px;font-size:11px">Form EC8A not displayed before departure.</td>
+              <td style="font-size:11px;color:var(--m)">Citizen</td>
+              <td>
+                <div style="display:flex;gap:4px">
+                  <button onclick="verifyAction(this,'verified')" style="font-size:10px;padding:4px 8px;border-radius:5px;border:1px solid rgba(0,135,81,0.4);background:rgba(0,135,81,0.08);color:var(--gl);cursor:pointer;font-family:'DM Mono',monospace">✓ Verify</button>
+                  <button onclick="verifyAction(this,'escalated')" style="font-size:10px;padding:4px 8px;border-radius:5px;border:1px solid rgba(229,61,46,0.3);background:rgba(229,61,46,0.07);color:#ff6b5b;cursor:pointer;font-family:'DM Mono',monospace">⚠ Escalate</button>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td style="font-family:'DM Mono',monospace;font-size:10px;color:var(--m)">RVD-007</td>
+              <td><span class="badge" style="background:rgba(0,135,81,0.15);color:var(--gl)">Voting</span></td>
+              <td>Owerri North, Imo</td>
+              <td style="max-width:200px;font-size:11px">Underage individuals observed in voter queue.</td>
+              <td style="font-size:11px;color:var(--m)">Observer</td>
+              <td>
+                <div style="display:flex;gap:4px">
+                  <button onclick="verifyAction(this,'verified')" style="font-size:10px;padding:4px 8px;border-radius:5px;border:1px solid rgba(0,135,81,0.4);background:rgba(0,135,81,0.08);color:var(--gl);cursor:pointer;font-family:'DM Mono',monospace">✓ Verify</button>
+                  <button onclick="verifyAction(this,'escalated')" style="font-size:10px;padding:4px 8px;border-radius:5px;border:1px solid rgba(229,61,46,0.3);background:rgba(229,61,46,0.07);color:#ff6b5b;cursor:pointer;font-family:'DM Mono',monospace">⚠ Escalate</button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── MAP ── -->
+    <div class="dash-page" id="page-map">
+      <div class="dash-page-title">Live Incident Map</div>
+      <div class="dash-page-sub">Real-time Nigeria election incident map</div>
+      <div style="background:var(--ink2);border:1px solid var(--bd);border-radius:12px;height:500px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px">
+        <div style="font-size:48px">🗺️</div>
+        <div style="font-size:16px;font-weight:700">Full Map Dashboard</div>
+        <div style="font-size:13px;color:var(--m)">Opens the main Revoda dashboard with interactive Nigeria map</div>
+        <button class="btn-solid" onclick="window.open('index.html','_blank')" style="padding:12px 24px">Open Full Map Dashboard →</button>
+      </div>
+    </div>
+
+    <!-- ── ALERTS ── -->
+    <div class="dash-page" id="page-alerts">
+      <div class="dash-page-title">Escalation Alerts</div>
+      <div class="dash-page-sub">Active alerts affecting your monitoring areas</div>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div style="background:rgba(229,61,46,0.07);border:1px solid rgba(229,61,46,0.22);border-radius:12px;padding:20px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+            <span style="font-size:20px">⚡</span>
+            <div style="font-size:13px;font-weight:700;color:#ff6b5b">HOTSPOT DETECTED — Rivers State</div>
+            <span style="margin-left:auto;font-size:10px;font-family:'DM Mono',monospace;color:var(--m)">09:52 AM</span>
+          </div>
+          <div style="font-size:12px;opacity:0.8;line-height:1.6;margin-bottom:12px">6 violence incidents within 3km radius of Port Harcourt Zone 3 in the last 90 minutes. Immediate escalation recommended.</div>
+          <button style="font-size:11px;padding:6px 14px;border-radius:6px;border:1px solid rgba(229,61,46,0.3);background:rgba(229,61,46,0.08);color:#ff6b5b;cursor:pointer">Acknowledge →</button>
+        </div>
+        <div style="background:rgba(232,196,64,0.07);border:1px solid rgba(232,196,64,0.22);border-radius:12px;padding:20px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+            <span style="font-size:20px">📦</span>
+            <div style="font-size:13px;font-weight:700;color:var(--acc)">BVAS FAILURE CLUSTER — Lagos / Ogun</div>
+            <span style="margin-left:auto;font-size:10px;font-family:'DM Mono',monospace;color:var(--m)">10:18 AM</span>
+          </div>
+          <div style="font-size:12px;opacity:0.8;line-height:1.6;margin-bottom:12px">Material failure pattern across 4 LGAs. INEC national office has been notified.</div>
+          <button style="font-size:11px;padding:6px 14px;border-radius:6px;border:1px solid rgba(232,196,64,0.3);background:rgba(232,196,64,0.08);color:var(--acc);cursor:pointer">View Details →</button>
+        </div>
+        <div style="background:rgba(61,139,205,0.07);border:1px solid rgba(61,139,205,0.22);border-radius:12px;padding:20px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+            <span style="font-size:20px">📋</span>
+            <div style="font-size:13px;font-weight:700;color:#5ba3d9">RESULTS ANOMALY — Borno State</div>
+            <span style="margin-left:auto;font-size:10px;font-family:'DM Mono',monospace;color:var(--m)">05:22 PM</span>
+          </div>
+          <div style="font-size:12px;opacity:0.8;line-height:1.6;margin-bottom:12px">3 collation centres missing Form EC8A. AI pattern match to 2019 elections in same LGA.</div>
+          <button style="font-size:11px;padding:6px 14px;border-radius:6px;border:1px solid rgba(61,139,205,0.3);background:rgba(61,139,205,0.08);color:#5ba3d9;cursor:pointer">View Details →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── ANALYTICS ── -->
+    <div class="dash-page" id="page-analytics">
+      <div class="dash-page-title">Analytics</div>
+      <div class="dash-page-sub">Incident trends for your organisation and national data</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+        <div class="dash-card"><div class="dash-card-header"><div class="dash-card-title">Incidents by Category</div></div><div style="padding:20px" id="an-cat"></div></div>
+        <div class="dash-card"><div class="dash-card-header"><div class="dash-card-title">Top 5 States</div></div><div style="padding:20px" id="an-state"></div></div>
+      </div>
+    </div>
+
+    <!-- ── EXPORT ── -->
+    <div class="dash-page" id="page-export">
+      <div class="dash-page-title">Export Data</div>
+      <div class="dash-page-sub">Download incident data for your reports and briefings</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;max-width:680px">
+        ${[["📊","Incident CSV","All verified incidents with location and status"],["🗺️","GeoJSON","Geospatial data for mapping tools"],["📑","PDF Report","Formatted report of escalated incidents"],["📦","Full Archive","Complete JSON export"]].map(([icon,t,d])=>`
+        <div class="dash-card" style="cursor:pointer">
+          <div style="padding:22px;text-align:center">
+            <div style="font-size:32px;margin-bottom:10px">${icon}</div>
+            <div style="font-size:13px;font-weight:700;margin-bottom:5px">${t}</div>
+            <div style="font-size:11px;color:var(--m);margin-bottom:16px">${d}</div>
+            <button onclick="toast('Generating ${t}...')" style="background:var(--g);color:#fff;border:none;padding:8px 16px;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;width:100%">Download</button>
+          </div>
+        </div>`).join('')}
+      </div>
+    </div>
+
+    <!-- ── PROFILE ── -->
+    <div class="dash-page" id="page-profile">
+      <div class="dash-page-title">My Profile</div>
+      <div class="dash-page-sub">Your organisation account details</div>
+      <div class="profile-grid">
+        <div>
+          <div class="profile-card">
+            <div class="profile-avatar" id="profile-avatar-big">A</div>
+            <div class="profile-name" id="profile-name-display">Ada Okafor</div>
+            <div class="profile-org" id="profile-org-display">YIAGA Africa</div>
+            <div class="profile-badge">✓ Verified Partner · CSO</div>
+            <div style="width:100%;height:1px;background:var(--bd);margin:16px 0"></div>
+            <div style="text-align:left">
+              <div style="font-size:11px;color:var(--m);font-family:'DM Mono',monospace;margin-bottom:4px">EMAIL</div>
+              <div style="font-size:13px;margin-bottom:12px" id="profile-email-display">ada@yiaga.org</div>
+              <div style="font-size:11px;color:var(--m);font-family:'DM Mono',monospace;margin-bottom:4px">MEMBER SINCE</div>
+              <div style="font-size:13px;margin-bottom:12px">February 2027</div>
+              <div style="font-size:11px;color:var(--m);font-family:'DM Mono',monospace;margin-bottom:4px">ACCOUNT STATUS</div>
+              <span class="badge badge-ver">Active · Approved</span>
+            </div>
+            <div class="profile-stats">
+              <div class="profile-stat"><div class="profile-stat-num" id="p-total">0</div><div class="profile-stat-label">Reports</div></div>
+              <div class="profile-stat"><div class="profile-stat-num" style="color:#ff6b5b" id="p-esc">0</div><div class="profile-stat-label">Escalated</div></div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="dash-card" style="margin-bottom:16px">
+            <div class="dash-card-header"><div class="dash-card-title">Edit Profile</div></div>
+            <div style="padding:20px;display:flex;flex-direction:column;gap:14px">
+              <div class="field"><label class="field-label">Full Name</label><input class="field-input" id="edit-name" placeholder="Your full name"></div>
+              <div class="field"><label class="field-label">Organisation</label><input class="field-input" id="edit-org" placeholder="Organisation name"></div>
+              <div class="field"><label class="field-label">Phone</label><input class="field-input" placeholder="+234 80 0000 0000" type="tel"></div>
+              <button onclick="saveProfile()" style="background:var(--g);color:#fff;border:none;padding:10px;border-radius:7px;font-size:13px;font-weight:700;cursor:pointer">Save Changes</button>
+            </div>
+          </div>
+          <div class="dash-card">
+            <div class="dash-card-header"><div class="dash-card-title">Change Password</div></div>
+            <div style="padding:20px;display:flex;flex-direction:column;gap:14px">
+              <div class="field"><label class="field-label">Current Password</label><input class="field-input" type="password" placeholder="Current password"></div>
+              <div class="field"><label class="field-label">New Password</label><input class="field-input" type="password" placeholder="New password (min 8 chars)"></div>
+              <button style="background:none;border:1px solid var(--bd);color:var(--m);padding:10px;border-radius:7px;font-size:13px;cursor:pointer">Update Password</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── API ACCESS ── -->
+    <div class="dash-page" id="page-api">
+      <div class="dash-page-title">API Access</div>
+      <div class="dash-page-sub">Your partner API credentials for system integration</div>
+      <div style="max-width:640px">
+        <div class="dash-card" style="margin-bottom:16px">
+          <div class="dash-card-header"><div class="dash-card-title">Partner API Token</div></div>
+          <div style="padding:20px">
+            <div style="font-size:12px;color:var(--m);margin-bottom:10px;line-height:1.6">Use this token to authenticate API requests from your system. Keep it secret — do not share publicly.</div>
+            <div class="api-token-box">
+              <span id="api-token-display">rvd_live_••••••••••••••••••••••••••</span>
+              <button class="copy-btn" onclick="revealToken(this)">Reveal</button>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:12px">
+              <button onclick="toast('New token generated!')" style="font-size:12px;padding:8px 14px;border-radius:7px;border:1px solid var(--bd);background:none;color:var(--m);cursor:pointer">🔄 Regenerate Token</button>
+              <button onclick="copyToken()" style="font-size:12px;padding:8px 14px;border-radius:7px;border:1px solid rgba(0,135,81,0.4);background:rgba(0,135,81,0.08);color:var(--gl);cursor:pointer">📋 Copy Token</button>
+            </div>
+          </div>
+        </div>
+        <div class="dash-card">
+          <div class="dash-card-header"><div class="dash-card-title">Quick Start</div></div>
+          <div style="padding:20px">
+            <div style="font-size:12px;color:var(--m);margin-bottom:12px">Submit an incident via API:</div>
+            <div style="background:var(--ink3);border-radius:8px;padding:14px;font-family:'DM Mono',monospace;font-size:11px;color:#c084fc;line-height:1.8;overflow-x:auto">
+              <span style="color:var(--m)">POST</span> https://api.revoda.eienigeria.org/api/v1/incidents<br>
+              <span style="color:var(--m)">Authorization:</span> Bearer YOUR_TOKEN<br><br>
+              {<br>
+              &nbsp;&nbsp;<span style="color:var(--acc)">"category"</span>: <span style="color:var(--gl)">"violence"</span>,<br>
+              &nbsp;&nbsp;<span style="color:var(--acc)">"state"</span>: <span style="color:var(--gl)">"Rivers"</span>,<br>
+              &nbsp;&nbsp;<span style="color:var(--acc)">"lga"</span>: <span style="color:var(--gl)">"Obio-Akpor"</span>,<br>
+              &nbsp;&nbsp;<span style="color:var(--acc)">"description"</span>: <span style="color:var(--gl)">"Incident description..."</span><br>
+              }
+            </div>
+            <a href="#" style="display:inline-block;margin-top:12px;font-size:12px;color:var(--gl)">View full API documentation →</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- Toast notification -->
+<div id="toast-el" style="position:fixed;bottom:24px;right:24px;background:var(--ink3);border:1px solid var(--g);border-radius:9px;padding:12px 18px;font-size:13px;color:var(--gl);z-index:9999;display:none;animation:fadeUp 0.3s ease;pointer-events:none"></div>
+
+<script>
+// ── State ─────────────────────────────────────────────────────────────────────
+let currentUser = null;
+let myReports = [];
+let regAccountType = '';
+const FAKE_TOKEN = 'rvd_live_' + Array.from({length:32}, () => 'abcdefghijklmnopqrstuvwxyz0123456789'[Math.floor(Math.random()*36)]).join('');
+
+// ── Screen navigation ─────────────────────────────────────────────────────────
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.dashboard-screen').forEach(s => s.classList.remove('active'));
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (el.classList.contains('dashboard-screen')) el.classList.add('active');
+  else el.classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+// ── Register flow ─────────────────────────────────────────────────────────────
+function selectAccountType(el, type) {
+  document.querySelectorAll('.acct-type').forEach(t => t.classList.remove('selected'));
+  el.classList.add('selected');
+  regAccountType = type;
+  document.getElementById('btn-step1').disabled = false;
+}
+
+function goRegStep(step) {
+  if (step === 2) {
+    document.getElementById('reg-step1').style.display = 'none';
+    document.getElementById('reg-step2').style.display = 'block';
+    document.getElementById('step1-dot').className = 'step-dot done';
+    document.getElementById('step2-dot').className = 'step-dot active';
+  } else if (step === 3) {
+    const btn = document.getElementById('btn-step2');
+    btn.classList.add('loading');
+    btn.disabled = true;
+    // Simulate API call
+    setTimeout(() => {
+      btn.classList.remove('loading');
+      // Save user to session
+      currentUser = {
+        name: document.getElementById('reg-fname').value + ' ' + document.getElementById('reg-lname').value,
+        org: document.getElementById('reg-org').value,
+        email: document.getElementById('reg-email').value,
+        type: regAccountType,
+        pending: true
+      };
+      const appId = 'RVD-APP-' + Math.random().toString(36).slice(2,8).toUpperCase();
+      document.getElementById('app-id').textContent = appId;
+      document.getElementById('reg-step2').style.display = 'none';
+      document.getElementById('reg-step3').style.display = 'block';
+      document.getElementById('step2-dot').className = 'step-dot done';
+      document.getElementById('step3-dot').className = 'step-dot active';
+    }, 1800);
+  }
+}
+
+function checkStep2() {
+  const fname = document.getElementById('reg-fname').value.trim();
+  const lname = document.getElementById('reg-lname').value.trim();
+  const org = document.getElementById('reg-org').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
+  const phone = document.getElementById('reg-phone').value.trim();
+  const state = document.getElementById('reg-state').value;
+  const pw = document.getElementById('reg-pw').value;
+  const terms = document.getElementById('terms-cb').checked;
+  const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  document.getElementById('email-err').classList.toggle('show', email.length > 0 && !emailOk);
+  document.getElementById('btn-step2').disabled = !(fname && lname && org && emailOk && phone && state && pw.length >= 8 && terms);
+}
+
+// ── Login ─────────────────────────────────────────────────────────────────────
+function checkLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const pw = document.getElementById('login-pw').value;
+  document.getElementById('btn-login').disabled = !(email && pw.length >= 6);
+}
+
+function doLogin() {
+  const btn = document.getElementById('btn-login');
+  btn.classList.add('loading');
+  btn.disabled = true;
+  const email = document.getElementById('login-email').value;
+  setTimeout(() => {
+    btn.classList.remove('loading');
+    // Demo: any valid login works
+    currentUser = {
+      name: 'Ada Okafor',
+      org: 'YIAGA Africa',
+      email: email,
+      type: 'cso',
+      pending: false
+    };
+    showDashboard(false);
+  }, 1400);
+}
+
+// ── Dashboard ─────────────────────────────────────────────────────────────────
+function showDashboard(pending) {
+  if (!currentUser) currentUser = { name:'Ada Okafor', org:'YIAGA Africa', email:'ada@yiaga.org', type:'cso', pending: pending || false };
+  currentUser.pending = pending;
+
+  // Update UI with user info
+  const initials = currentUser.name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase();
+  document.getElementById('user-avatar').textContent = initials;
+  document.getElementById('user-display-name').textContent = currentUser.name;
+  document.getElementById('user-display-org').textContent = currentUser.org + ' · ' + currentUser.type.toUpperCase();
+  document.getElementById('dash-greeting-name').textContent = currentUser.name.split(' ')[0];
+  document.getElementById('dash-org-label').textContent = currentUser.org + ' · Pre-Election Phase · Nigeria 2027';
+  document.getElementById('org-credit').textContent = currentUser.org;
+  document.getElementById('profile-avatar-big').textContent = initials;
+  document.getElementById('profile-name-display').textContent = currentUser.name;
+  document.getElementById('profile-org-display').textContent = currentUser.org;
+  document.getElementById('profile-email-display').textContent = currentUser.email;
+  document.getElementById('edit-name').value = currentUser.name;
+  document.getElementById('edit-org').value = currentUser.org;
+
+  if (pending) {
+    document.getElementById('approval-banner').style.display = 'flex';
+  }
+
+  renderAnalytics();
+  showScreen('screen-dashboard');
+}
+
+function showDashPage(page, el) {
+  document.querySelectorAll('.dash-page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.dash-nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  if (el) el.classList.add('active');
+  else {
+    // find the matching nav item
+    document.querySelectorAll('.dash-nav-item').forEach(n => {
+      if (n.textContent.toLowerCase().includes(page.replace('-', ' '))) n.classList.add('active');
+    });
+  }
+}
+
+// ── Submit report ─────────────────────────────────────────────────────────────
+function submitReport() {
+  const desc = document.getElementById('sub-desc').value.trim();
+  const cat = document.getElementById('sub-category').value;
+  const state = document.getElementById('sub-state').value;
+  if (!cat || !state || desc.length < 10) { toast('Please fill all required fields'); return; }
+  const btn = document.getElementById('sub-btn');
+  btn.classList.add('loading'); btn.disabled = true;
+  setTimeout(() => {
+    btn.classList.remove('loading'); btn.disabled = false;
+    const id = 'RVD-' + String(myReports.length + 10 + 1).padStart(3,'0');
+    const newReport = { id, category: cat.split(' ').pop(), state, desc, status: 'unverified', time: new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) };
+    myReports.push(newReport);
+    document.getElementById('my-reports-count').textContent = myReports.length;
+    document.getElementById('p-total').textContent = myReports.length;
+    updateMyReportsTable();
+    document.getElementById('sub-desc').value = '';
+    document.getElementById('sub-category').value = '';
+    document.getElementById('sub-state').value = '';
+    toast('✅ Report ' + id + ' submitted successfully!');
+    showDashPage('my-reports', null);
+  }, 1600);
+}
+
+function updateMyReportsTable() {
+  const body = document.getElementById('my-reports-body');
+  const total = document.getElementById('my-reports-total');
+  total.textContent = myReports.length + ' report' + (myReports.length !== 1 ? 's' : '');
+  if (myReports.length === 0) {
+    body.innerHTML = '<div style="padding:48px;text-align:center;color:var(--m)"><div style="font-size:32px;margin-bottom:12px">📭</div><div style="font-size:14px;font-weight:600;margin-bottom:6px">No reports yet</div><div style="font-size:12px">Submit your first incident report to see it here.</div></div>';
+    return;
+  }
+  body.innerHTML = '<table><thead><tr><th>ID</th><th>Category</th><th>State</th><th>Status</th><th>Time</th></tr></thead><tbody>' +
+    myReports.map(r => `<tr><td style="font-family:'DM Mono',monospace;font-size:10px;color:var(--m)">${r.id}</td><td><span class="badge badge-unv">${r.category}</span></td><td>${r.state}</td><td><span class="badge badge-unv">Unverified</span></td><td style="font-family:'DM Mono',monospace;font-size:10px;color:var(--m)">${r.time}</td></tr>`).join('') +
+    '</tbody></table>';
+}
+
+// ── Verify actions ─────────────────────────────────────────────────────────────
+function verifyAction(btn, status) {
+  const row = btn.closest('tr');
+  btn.closest('td').innerHTML = `<span class="badge badge-${status==='verified'?'ver':'esc'}">${status==='verified'?'✓ Verified':'⚠ Escalated'}</span>`;
+  toast(status === 'verified' ? '✓ Incident verified' : '⚠ Incident escalated — alerts sent');
+}
+
+// ── Analytics ─────────────────────────────────────────────────────────────────
+function renderAnalytics() {
+  const cats = [{l:"Violence",v:218,c:"#E53D2E"},{l:"Voting",v:341,c:"#008751"},{l:"Materials",v:187,c:"#E8C440"},{l:"Police",v:156,c:"#3d8bcd"},{l:"Results",v:203,c:"#c084fc"}];
+  const states = [{l:"Rivers",v:182,c:"#E53D2E"},{l:"Lagos",v:154,c:"#E8C440"},{l:"Kano",v:138,c:"#3d8bcd"},{l:"Imo",v:117,c:"#c084fc"},{l:"Borno",v:99,c:"#008751"}];
+  const max1 = 341, max2 = 182;
+  document.getElementById('an-cat').innerHTML = cats.map(d=>`<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><div style="font-size:11px;color:var(--m);width:75px;flex-shrink:0">${d.l}</div><div style="flex:1;height:7px;background:rgba(255,255,255,0.05);border-radius:4px;overflow:hidden"><div style="width:${(d.v/max1)*100}%;height:100%;background:${d.c};border-radius:4px"></div></div><div style="font-size:10px;color:var(--w);font-family:'DM Mono',monospace;width:30px;text-align:right">${d.v}</div></div>`).join('');
+  document.getElementById('an-state').innerHTML = states.map(d=>`<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><div style="font-size:11px;color:var(--m);width:75px;flex-shrink:0">${d.l}</div><div style="flex:1;height:7px;background:rgba(255,255,255,0.05);border-radius:4px;overflow:hidden"><div style="width:${(d.v/max2)*100}%;height:100%;background:${d.c};border-radius:4px"></div></div><div style="font-size:10px;color:var(--w);font-family:'DM Mono',monospace;width:30px;text-align:right">${d.v}</div></div>`).join('');
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────────────
+function togglePw(id, btn) {
+  const inp = document.getElementById(id);
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+  btn.textContent = inp.type === 'password' ? '👁' : '🙈';
+}
+
+function revealToken(btn) {
+  document.getElementById('api-token-display').textContent = FAKE_TOKEN;
+  btn.textContent = 'Copy';
+  btn.onclick = copyToken;
+}
+
+function copyToken() {
+  navigator.clipboard?.writeText(FAKE_TOKEN).catch(()=>{});
+  toast('✓ Token copied to clipboard');
+}
+
+function saveProfile() {
+  const name = document.getElementById('edit-name').value;
+  const org = document.getElementById('edit-org').value;
+  if (currentUser) { currentUser.name = name; currentUser.org = org; }
+  document.getElementById('profile-name-display').textContent = name;
+  document.getElementById('profile-org-display').textContent = org;
+  document.getElementById('user-display-name').textContent = name;
+  document.getElementById('dash-greeting-name').textContent = name.split(' ')[0];
+  toast('✓ Profile updated');
+}
+
+function logout() {
+  currentUser = null;
+  myReports = [];
+  showScreen('screen-landing');
+}
+
+function toast(msg) {
+  const el = document.getElementById('toast-el');
+  el.textContent = msg;
+  el.style.display = 'block';
+  clearTimeout(el._t);
+  el._t = setTimeout(() => { el.style.display = 'none'; }, 3000);
+}
+
+// Ensure login btn starts disabled
+document.getElementById('btn-login').disabled = true;
+</script>
+
+</body>
+</html>

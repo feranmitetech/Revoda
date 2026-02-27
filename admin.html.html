@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Revoda Admin — Partner Verification Console</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --g:#008751;--gl:#00a862;--gd:#005c37;
+  --ink:#080c0f;--ink2:#0d1117;--ink3:#161b22;--ink4:#21262d;
+  --w:#edeae4;--m:#6b7a8d;--acc:#E8C440;--red:#E53D2E;--blue:#3d8bcd;
+  --bd:rgba(255,255,255,0.07);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--ink);color:var(--w);font-family:'Manrope',sans-serif;font-size:14px}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:var(--ink4);border-radius:2px}
+
+/* layout */
+.admin-layout{display:grid;grid-template-columns:220px 1fr;height:100vh}
+.admin-nav{background:var(--ink2);border-right:1px solid var(--bd);padding:20px 14px;display:flex;flex-direction:column;gap:6px}
+.admin-logo{display:flex;align-items:center;gap:8px;padding:0 8px 16px;border-bottom:1px solid var(--bd);margin-bottom:10px}
+.admin-logo-box{width:28px;height:28px;background:var(--g);border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:13px;color:#fff}
+.admin-logo-text{font-family:'Syne',sans-serif;font-weight:800;font-size:15px}
+.admin-logo-text em{color:var(--gl);font-style:normal}
+.nav-link{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:7px;cursor:pointer;transition:all 0.15s;border:1px solid transparent;font-size:13px;font-weight:500}
+.nav-link:hover,.nav-link.active{background:var(--ink3);border-color:var(--bd)}
+.nav-link.active{border-color:rgba(0,135,81,0.4);color:var(--gl)}
+.nav-icon{font-size:15px;width:20px;text-align:center}
+.nav-badge{margin-left:auto;background:var(--red);color:#fff;font-size:9px;padding:1px 5px;border-radius:4px;font-family:'DM Mono',monospace}
+
+/* main */
+.admin-main{overflow-y:auto;padding:24px}
+.page{display:none}.page.active{display:block}
+.page-header{margin-bottom:24px}
+.page-title{font-family:'Syne',sans-serif;font-weight:800;font-size:22px;letter-spacing:-0.3px}
+.page-sub{font-size:12px;color:var(--m);margin-top:4px;font-family:'DM Mono',monospace}
+
+/* top stat strip */
+.stat-strip{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:24px}
+.stat-box{background:var(--ink2);border:1px solid var(--bd);border-radius:10px;padding:14px 14px}
+.stat-box-num{font-family:'Syne',sans-serif;font-size:24px;font-weight:800;line-height:1}
+.stat-box-label{font-size:11px;color:var(--m);margin-top:4px}
+
+/* table */
+.table-wrap{background:var(--ink2);border:1px solid var(--bd);border-radius:10px;overflow:hidden}
+.table-toolbar{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--bd)}
+.search-inp{background:var(--ink3);border:1px solid var(--bd);border-radius:7px;padding:8px 12px;color:var(--w);font-size:13px;font-family:'Manrope',sans-serif;width:220px}
+.search-inp:focus{outline:none;border-color:var(--g)}
+.filter-sel{background:var(--ink3);border:1px solid var(--bd);border-radius:7px;padding:8px 10px;color:var(--w);font-size:12px;font-family:'DM Mono',monospace;-webkit-appearance:none}
+.filter-sel:focus{outline:none;border-color:var(--g)}
+.export-btn{margin-left:auto;background:none;border:1px solid var(--bd);border-radius:7px;padding:7px 14px;color:var(--m);font-size:12px;cursor:pointer;transition:all 0.15s;font-family:'DM Mono',monospace}
+.export-btn:hover{border-color:var(--g);color:var(--gl)}
+
+table{width:100%;border-collapse:collapse}
+thead tr{background:var(--ink3)}
+th{padding:10px 14px;text-align:left;font-size:10px;font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:0.8px;color:var(--m);font-weight:500;border-bottom:1px solid var(--bd)}
+td{padding:11px 14px;font-size:12px;border-bottom:1px solid rgba(255,255,255,0.04)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,0.02)}
+
+.badge{font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:0.4px}
+.badge-esc{background:rgba(229,61,46,0.15);color:#ff6b5b}
+.badge-ver{background:rgba(0,135,81,0.15);color:var(--gl)}
+.badge-unv{background:rgba(232,196,64,0.15);color:var(--acc)}
+.badge-dis{background:rgba(107,122,141,0.15);color:var(--m)}
+
+.cat-badge{font-size:9px;padding:2px 6px;border-radius:4px;font-family:'DM Mono',monospace}
+
+.row-actions{display:flex;gap:4px}
+.row-btn{font-size:10px;padding:4px 9px;border-radius:5px;border:1px solid var(--bd);background:none;color:var(--m);cursor:pointer;transition:all 0.12s;font-family:'DM Mono',monospace}
+.row-btn:hover{border-color:var(--g);color:var(--gl)}
+.row-btn.danger:hover{border-color:var(--red);color:#ff6b5b}
+.row-btn.verify{border-color:rgba(0,135,81,0.4);color:var(--gl);background:rgba(0,135,81,0.07)}
+
+/* modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);z-index:200;display:none;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:var(--ink2);border:1px solid var(--bd);border-radius:12px;width:520px;max-width:90vw;padding:24px;max-height:85vh;overflow-y:auto}
+.modal-title{font-family:'Syne',sans-serif;font-weight:800;font-size:17px;margin-bottom:16px}
+.modal-close{float:right;background:none;border:none;color:var(--m);font-size:18px;cursor:pointer;margin-top:-4px}
+.detail-row{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--bd)}
+.detail-row:last-child{border-bottom:none}
+.detail-key{font-size:11px;color:var(--m);width:110px;flex-shrink:0;font-family:'DM Mono',monospace;padding-top:2px}
+.detail-val{font-size:13px;line-height:1.5}
+.modal-actions{display:flex;gap:8px;margin-top:16px}
+.modal-btn{flex:1;padding:10px;border-radius:7px;border:1px solid var(--bd);background:none;color:var(--m);cursor:pointer;font-family:'Manrope',sans-serif;font-weight:600;font-size:13px;transition:all 0.15s}
+.modal-btn.verify-btn{background:rgba(0,135,81,0.15);border-color:rgba(0,135,81,0.4);color:var(--gl)}
+.modal-btn.verify-btn:hover{background:var(--g);color:#fff}
+.modal-btn.esc-btn{background:rgba(229,61,46,0.1);border-color:rgba(229,61,46,0.3);color:#ff6b5b}
+.modal-btn.esc-btn:hover{background:var(--red);color:#fff}
+.modal-btn.dis-btn:hover{border-color:var(--m);color:var(--w)}
+.notes-input{width:100%;background:rgba(255,255,255,0.04);border:1px solid var(--bd);border-radius:7px;padding:10px 12px;color:var(--w);font-family:'Manrope',sans-serif;font-size:13px;resize:vertical;min-height:70px;margin-top:12px}
+.notes-input:focus{outline:none;border-color:var(--g)}
+
+/* partner management */
+.partner-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-bottom:24px}
+.partner-card{background:var(--ink2);border:1px solid var(--bd);border-radius:10px;padding:16px}
+.partner-card-header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.partner-icon{width:36px;height:36px;background:rgba(0,135,81,0.15);border:1px solid rgba(0,135,81,0.3);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.partner-name{font-weight:700;font-size:13px}
+.partner-type{font-size:10px;color:var(--m);font-family:'DM Mono',monospace}
+.partner-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:10px}
+.partner-stat{background:var(--ink3);border-radius:6px;padding:8px;text-align:center}
+.partner-stat-num{font-family:'Syne',sans-serif;font-size:16px;font-weight:700}
+.partner-stat-label{font-size:9px;color:var(--m);font-family:'DM Mono',monospace}
+.partner-token{font-family:'DM Mono',monospace;font-size:10px;color:var(--m);background:var(--ink3);border-radius:5px;padding:6px 8px;margin-top:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* charts */
+.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:20px}
+.chart-card{background:var(--ink2);border:1px solid var(--bd);border-radius:10px;padding:18px}
+.chart-title{font-size:12px;font-weight:700;margin-bottom:14px;color:var(--m);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:0.5px}
+.h-bar-row{display:flex;align-items:center;gap:8px;margin-bottom:9px}
+.h-bar-label{font-size:11px;color:var(--m);width:90px;flex-shrink:0}
+.h-bar-track{flex:1;height:8px;background:rgba(255,255,255,0.05);border-radius:4px;overflow:hidden}
+.h-bar-fill{height:100%;border-radius:4px;transition:width 1s ease}
+.h-bar-val{font-size:10px;color:var(--w);font-family:'DM Mono',monospace;width:35px;text-align:right}
+
+/* alert log */
+.alert-row{padding:12px 14px;border-bottom:1px solid var(--bd);display:flex;align-items:flex-start;gap:12px}
+.alert-row:last-child{border-bottom:none}
+.alert-sev{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.sev-critical{background:rgba(229,61,46,0.2)}
+.sev-high{background:rgba(232,196,64,0.2)}
+.alert-content{flex:1}
+.alert-t{font-size:12px;font-weight:600;margin-bottom:3px}
+.alert-b{font-size:11px;color:var(--m);line-height:1.5}
+.alert-time{font-size:10px;color:var(--m);font-family:'DM Mono',monospace;white-space:nowrap}
+
+/* toast */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--ink3);border:1px solid var(--g);border-radius:8px;padding:12px 16px;font-size:13px;color:var(--gl);z-index:300;animation:toastIn 0.3s ease;pointer-events:none}
+@keyframes toastIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+
+<div class="admin-layout">
+  <!-- Sidebar nav -->
+  <nav class="admin-nav">
+    <div class="admin-logo">
+      <div class="admin-logo-box">R</div>
+      <div class="admin-logo-text">Re<em>Vo</em>Da <span style="font-size:9px;color:var(--m);font-family:'DM Mono',monospace;display:block;font-weight:400;margin-top:-2px">ADMIN CONSOLE</span></div>
+    </div>
+    <div class="nav-link active" onclick="showPage('incidents',this)"><span class="nav-icon">📋</span>Incidents<span class="nav-badge" id="unvBadge">384</span></div>
+    <div class="nav-link" onclick="showPage('alerts',this)"><span class="nav-icon">⚠️</span>Alerts<span class="nav-badge" style="background:var(--acc);color:#000">3</span></div>
+    <div class="nav-link" onclick="showPage('analytics',this)"><span class="nav-icon">📊</span>Analytics</div>
+    <div class="nav-link" onclick="showPage('partners',this)"><span class="nav-icon">🤝</span>Partners</div>
+    <div class="nav-link" onclick="showPage('export',this)"><span class="nav-icon">📤</span>Export</div>
+    <div style="margin-top:auto;padding-top:16px;border-top:1px solid var(--bd)">
+      <div style="font-size:10px;color:var(--m);padding:0 10px;font-family:'DM Mono',monospace">Logged in as:<br><span style="color:var(--gl)">EiE Nigeria · Admin</span></div>
+    </div>
+  </nav>
+
+  <!-- Main content -->
+  <main class="admin-main">
+
+    <!-- INCIDENTS PAGE -->
+    <div class="page active" id="page-incidents">
+      <div class="page-header">
+        <div class="page-title">Incident Verification Queue</div>
+        <div class="page-sub">Review, verify and escalate citizen reports</div>
+      </div>
+
+      <div class="stat-strip">
+        <div class="stat-box"><div class="stat-box-num" style="color:#ff6b5b">1,247</div><div class="stat-box-label">Total Reports</div></div>
+        <div class="stat-box"><div class="stat-box-num" style="color:var(--acc)">384</div><div class="stat-box-label">Awaiting Review</div></div>
+        <div class="stat-box"><div class="stat-box-num" style="color:var(--gl)">863</div><div class="stat-box-label">Verified</div></div>
+        <div class="stat-box"><div class="stat-box-num" style="color:#ff6b5b">37</div><div class="stat-box-label">Escalated</div></div>
+        <div class="stat-box"><div class="stat-box-num" style="color:var(--m)">12</div><div class="stat-box-label">Dismissed</div></div>
+      </div>
+
+      <div class="table-wrap">
+        <div class="table-toolbar">
+          <input class="search-inp" placeholder="🔍 Search incidents..." oninput="filterTable(this.value)">
+          <select class="filter-sel" onchange="filterStatus(this.value)">
+            <option value="">All Statuses</option>
+            <option value="unverified">Unverified</option>
+            <option value="verified">Verified</option>
+            <option value="escalated">Escalated</option>
+            <option value="dismissed">Dismissed</option>
+          </select>
+          <select class="filter-sel" onchange="filterCategory(this.value)">
+            <option value="">All Categories</option>
+            <option value="violence">Violence</option>
+            <option value="voting_irregularity">Voting</option>
+            <option value="material_availability">Materials</option>
+            <option value="police_behaviour">Police</option>
+            <option value="vote_counting">Counting</option>
+            <option value="results_verification">Results</option>
+          </select>
+          <button class="export-btn" onclick="exportCSV()">⬇ Export CSV</button>
+        </div>
+        <table id="incTable">
+          <thead>
+            <tr>
+              <th>ID</th><th>Category</th><th>Location</th><th>Reporter</th>
+              <th>Description</th><th>Status</th><th>Time</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="incTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ALERTS PAGE -->
+    <div class="page" id="page-alerts">
+      <div class="page-header">
+        <div class="page-title">Escalation Alerts</div>
+        <div class="page-sub">Auto-generated hotspot and pattern alerts</div>
+      </div>
+      <div class="table-wrap">
+        <div id="alertList"></div>
+      </div>
+    </div>
+
+    <!-- ANALYTICS PAGE -->
+    <div class="page" id="page-analytics">
+      <div class="page-header">
+        <div class="page-title">Analytics & Trends</div>
+        <div class="page-sub">Incident patterns across the election cycle</div>
+      </div>
+      <div class="stat-strip">
+        <div class="stat-box"><div class="stat-box-num" style="color:var(--gl)">37</div><div class="stat-box-label">States Reporting</div></div>
+        <div class="stat-box"><div class="stat-box-num" style="color:var(--acc)">847</div><div class="stat-box-label">Polling Units</div></div>
+        <div class="stat-box"><div class="stat-box-num" style="color:var(--blue)">12</div><div class="stat-box-label">Active Partners</div></div>
+        <div class="stat-box"><div class="stat-box-num" style="color:#ff6b5b">8</div><div class="stat-box-label">Hotspots</div></div>
+        <div class="stat-box"><div class="stat-box-num" style="color:#c084fc">94%</div><div class="stat-box-label">Verify Rate</div></div>
+      </div>
+      <div class="charts-grid">
+        <div class="chart-card">
+          <div class="chart-title">Incidents by Category</div>
+          <div id="catChart"></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Top 8 States by Incidents</div>
+          <div id="stateChart"></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Reporter Types</div>
+          <div id="reporterChart"></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Hourly Incident Volume (Today)</div>
+          <div id="hourlyChart"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PARTNERS PAGE -->
+    <div class="page" id="page-partners">
+      <div class="page-header">
+        <div class="page-title">Partner Organisations</div>
+        <div class="page-sub">CSO coalitions, observer groups, and media partners</div>
+      </div>
+      <div class="partner-grid" id="partnerGrid"></div>
+    </div>
+
+    <!-- EXPORT PAGE -->
+    <div class="page" id="page-export">
+      <div class="page-header">
+        <div class="page-title">Data Export & Archive</div>
+        <div class="page-sub">Download incident data for reports, analysis, and legal evidence</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;max-width:700px">
+        ${[
+          ["📊","Full Incident CSV","All incidents with coordinates, status, and verification notes","Download CSV"],
+          ["🗺️","GeoJSON Export","All verified incidents as GeoJSON for mapping tools","Download GeoJSON"],
+          ["📑","Evidence PDF Report","Formatted PDF report of escalated incidents by state","Generate PDF"],
+          ["📦","Full Archive","Complete JSON dump — all incidents, all metadata","Download JSON"],
+          ["📈","Analytics Report","Trend analysis comparing to 2023 election data","Generate Report"],
+          ["📧","Email Briefing","Send a summary briefing to all registered partners","Send Email"],
+        ].map(([icon,title,desc,action]) => `
+          <div style="background:var(--ink2);border:1px solid var(--bd);border-radius:10px;padding:18px">
+            <div style="font-size:28px;margin-bottom:10px">${icon}</div>
+            <div style="font-size:13px;font-weight:700;margin-bottom:4px">${title}</div>
+            <div style="font-size:11px;color:var(--m);margin-bottom:14px;line-height:1.5">${desc}</div>
+            <button onclick="doExport('${title}')" style="background:var(--g);color:#fff;border:none;padding:8px 14px;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;width:100%">${action}</button>
+          </div>
+        `).join("")}
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- Incident Detail Modal -->
+<div class="modal-overlay" id="incModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div class="modal-title" id="modalTitle">Incident Detail</div>
+    <div id="modalContent"></div>
+    <textarea class="notes-input" id="verifyNotes" placeholder="Add verification notes (optional)..."></textarea>
+    <div class="modal-actions">
+      <button class="modal-btn verify-btn" onclick="verifyIncident('verified')">✓ Verify</button>
+      <button class="modal-btn esc-btn" onclick="verifyIncident('escalated')">⚠ Escalate</button>
+      <button class="modal-btn dis-btn" onclick="verifyIncident('dismissed')">✕ Dismiss</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = 'http://localhost:8000/api/v1';
+const PARTNER_TOKEN = localStorage.getItem('revoda_partner_token') || '';
+
+const INCIDENTS = [
+  {id:"RVD-001",category:"violence",catLabel:"Violence",catColor:"#E53D2E",state:"Rivers",lga:"Obio-Akpor",pu:"RV-OBK-007",reporter:"citizen",desc:"Armed thugs disrupted voting at PU 007, intimidating voters and INEC officials before police arrived.",status:"escalated",time:"09:47 AM"},
+  {id:"RVD-002",category:"material_availability",catLabel:"Materials",catColor:"#E8C440",state:"Lagos",lga:"Ikeja",pu:"LG-IKJ-031",reporter:"observer",desc:"BVAS machine malfunction. 200+ voters unable to accredit. Manual fallback not authorised.",status:"unverified",time:"10:12 AM"},
+  {id:"RVD-003",category:"voting_irregularity",catLabel:"Voting",catColor:"#008751",state:"Lagos",lga:"Oshodi-Isolo",pu:"LG-OSH-018",reporter:"party_agent",desc:"Multiple voters turned away despite valid PVCs. Polling officer refusing accreditation.",status:"verified",time:"10:35 AM"},
+  {id:"RVD-004",category:"police_behaviour",catLabel:"Police",catColor:"#3d8bcd",state:"Kano",lga:"Gwale",pu:"KN-GWL-002",reporter:"journalist",desc:"Police stationed inside polling unit in violation of INEC guidelines, pressuring voters.",status:"verified",time:"11:02 AM"},
+  {id:"RVD-005",category:"results_verification",catLabel:"Results",catColor:"#c084fc",state:"FCT",lga:"Bwari",pu:"FC-BWR-011",reporter:"citizen",desc:"Result sheet Form EC8A not displayed at polling unit before departure. Agents denied copies.",status:"unverified",time:"05:15 PM"},
+  {id:"RVD-006",category:"vote_counting",catLabel:"Counting",catColor:"#fb923c",state:"Borno",lga:"Maiduguri MC",pu:"BO-MMC-044",reporter:"observer",desc:"Ballot box snatching during collation. Multiple eyewitnesses recorded the incident on video.",status:"escalated",time:"04:48 PM"},
+  {id:"RVD-007",category:"voting_irregularity",catLabel:"Voting",catColor:"#008751",state:"Imo",lga:"Owerri North",pu:"IM-OWN-003",reporter:"citizen",desc:"Underage individuals observed in voter queue. Party agent raised objection, was ignored.",status:"unverified",time:"08:30 AM"},
+  {id:"RVD-008",category:"electoral_officials_arrival",catLabel:"Officials",catColor:"#34d399",state:"Oyo",lga:"Ibadan North",pu:"OY-IBN-022",reporter:"observer",desc:"INEC officials arrived 3 hours late. Polling commenced at 11am instead of 8am as scheduled.",status:"verified",time:"11:05 AM"},
+  {id:"RVD-009",category:"violence",catLabel:"Violence",catColor:"#E53D2E",state:"Rivers",lga:"Port Harcourt",pu:"RV-PHC-015",reporter:"journalist",desc:"Shooting reported near collation centre. Two persons injured. Security forces called.",status:"escalated",time:"03:22 PM"},
+  {id:"RVD-010",category:"material_availability",catLabel:"Materials",catColor:"#E8C440",state:"Kano",lga:"Kano Municipal",pu:"KN-MUN-008",reporter:"citizen",desc:"Ballot papers for senatorial election missing from PU. Voters turned away after waiting 2 hours.",status:"unverified",time:"09:15 AM"},
+];
+
+const ALERTS = [
+  {sev:"critical",icon:"⚡",title:"HOTSPOT DETECTED — Rivers State",body:"6 violence incidents within 3km radius of Port Harcourt Zone 3 in the last 90 minutes. Immediate escalation recommended. Historical pattern matches 2019 data.",time:"09:52 AM"},
+  {sev:"critical",icon:"⚡",title:"BVAS FAILURE CLUSTER — Lagos / Ogun",body:"Material failure pattern: Ikeja, Kosofe (Lagos) and Abeokuta South (Ogun). 4 LGAs affected. INEC national office notified via partner CSO.",time:"10:18 AM"},
+  {sev:"high",icon:"📋",title:"RESULTS ANOMALY — Borno State",body:"3 collation centres with missing Form EC8A. AI pattern match: identical irregularity reported in same LGA during 2019 elections. Verification team dispatched.",time:"05:22 PM"},
+  {sev:"high",icon:"🚔",title:"POLICE DEPLOYMENT VIOLATION — Kano",body:"6 separate reports of police inside polling units across 3 LGAs. Violates INEC security guidelines. Forwarded to PSC liason.",time:"11:30 AM"},
+];
+
+const PARTNERS = [
+  {icon:"🏛️",name:"YIAGA Africa",type:"CSO Observer",reports:312,verified:287,escalated:8},
+  {icon:"📰",name:"Enough is Enough Nigeria",type:"Civil Society",reports:198,verified:165,escalated:5},
+  {icon:"🎓",name:"CLEEN Foundation",type:"Security Observer",reports:143,verified:128,escalated:12},
+  {icon:"📡",name:"NTA Nigeria",type:"Media Partner",reports:89,verified:72,escalated:3},
+  {icon:"👁️",name:"Transition Monitoring Group",type:"Observer Network",reports:267,verified:241,escalated:7},
+  {icon:"⚖️",name:"INEC (Official Feed)",type:"Electoral Commission",reports:445,verified:445,escalated:0},
+];
+
+let selectedIncident = null;
+
+function showPage(page, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  el.classList.add('active');
+}
+
+// render incident table
+function renderTable(data) {
+  const tbody = document.getElementById('incTableBody');
+  tbody.innerHTML = data.map(inc => `
+    <tr>
+      <td><span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--m)">${inc.id}</span></td>
+      <td><span class="cat-badge" style="background:${inc.catColor}22;color:${inc.catColor}">${inc.catLabel}</span></td>
+      <td><span style="font-size:12px">${inc.lga}, ${inc.state}</span><br><span style="font-size:10px;color:var(--m);font-family:'DM Mono',monospace">${inc.pu}</span></td>
+      <td><span style="font-size:11px;color:var(--m);text-transform:capitalize">${inc.reporter.replace('_',' ')}</span></td>
+      <td style="max-width:200px"><span style="font-size:11px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${inc.desc}</span></td>
+      <td><span class="badge badge-${inc.status==='escalated'?'esc':inc.status==='verified'?'ver':inc.status==='dismissed'?'dis':'unv'}">${inc.status}</span></td>
+      <td><span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--m)">${inc.time}</span></td>
+      <td>
+        <div class="row-actions">
+          <button class="row-btn verify" onclick="openModal('${inc.id}')">Review</button>
+          ${inc.status==='unverified'?`<button class="row-btn" onclick="quickVerify('${inc.id}','verified')">✓</button>`:''} 
+          ${inc.status!=='escalated'?`<button class="row-btn danger" onclick="quickVerify('${inc.id}','escalated')">!</button>`:''}
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function filterTable(q) {
+  const filtered = INCIDENTS.filter(i =>
+    i.desc.toLowerCase().includes(q.toLowerCase()) ||
+    i.state.toLowerCase().includes(q.toLowerCase()) ||
+    i.lga.toLowerCase().includes(q.toLowerCase()) ||
+    i.id.toLowerCase().includes(q.toLowerCase())
+  );
+  renderTable(filtered);
+}
+
+function filterStatus(val) {
+  renderTable(val ? INCIDENTS.filter(i => i.status === val) : INCIDENTS);
+}
+function filterCategory(val) {
+  renderTable(val ? INCIDENTS.filter(i => i.category === val) : INCIDENTS);
+}
+
+function openModal(id) {
+  selectedIncident = INCIDENTS.find(i => i.id === id);
+  if (!selectedIncident) return;
+  document.getElementById('modalTitle').textContent = `Incident ${selectedIncident.id}`;
+  document.getElementById('modalContent').innerHTML = `
+    <div class="detail-row"><div class="detail-key">Category</div><div class="detail-val"><span class="cat-badge" style="background:${selectedIncident.catColor}22;color:${selectedIncident.catColor}">${selectedIncident.catLabel}</span></div></div>
+    <div class="detail-row"><div class="detail-key">Location</div><div class="detail-val">${selectedIncident.lga}, ${selectedIncident.state} · <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--m)">${selectedIncident.pu}</span></div></div>
+    <div class="detail-row"><div class="detail-key">Reporter</div><div class="detail-val" style="text-transform:capitalize">${selectedIncident.reporter.replace('_',' ')}</div></div>
+    <div class="detail-row"><div class="detail-key">Status</div><div class="detail-val"><span class="badge badge-${selectedIncident.status==='escalated'?'esc':selectedIncident.status==='verified'?'ver':'unv'}">${selectedIncident.status}</span></div></div>
+    <div class="detail-row"><div class="detail-key">Reported At</div><div class="detail-val" style="font-family:'DM Mono',monospace;font-size:12px">${selectedIncident.time}</div></div>
+    <div class="detail-row"><div class="detail-key">Description</div><div class="detail-val" style="line-height:1.6">${selectedIncident.desc}</div></div>
+    <div class="detail-row"><div class="detail-key">Identity</div><div class="detail-val" style="color:var(--gl);font-size:12px">🔒 Anonymised — not stored</div></div>
+  `;
+  document.getElementById('incModal').classList.add('open');
+}
+
+function closeModal() { document.getElementById('incModal').classList.remove('open'); }
+
+async function verifyIncident(newStatus) {
+  if (!selectedIncident) return;
+  const notes = document.getElementById('verifyNotes').value;
+  selectedIncident.status = newStatus;
+  try {
+    await fetch(`${API}/incidents/${selectedIncident.id}/verify`, {
+      method:'PATCH',
+      headers:{'Content-Type':'application/json','Authorization':`Bearer ${PARTNER_TOKEN}`},
+      body: JSON.stringify({status:newStatus,notes})
+    });
+  } catch {}
+  closeModal();
+  renderTable(INCIDENTS);
+  showToast(`✓ Incident ${newStatus}`);
+  if (newStatus==='escalated') showToast('🚨 Alert sent to partners');
+}
+
+function quickVerify(id, status) {
+  const inc = INCIDENTS.find(i => i.id === id);
+  if (inc) { inc.status = status; renderTable(INCIDENTS); showToast(`Incident ${status}`); }
+}
+
+function exportCSV() {
+  const rows = [['ID','Category','State','LGA','PU','Status','Reporter','Description']];
+  INCIDENTS.forEach(i => rows.push([i.id,i.category,i.state,i.lga,i.pu,i.status,i.reporter,`"${i.desc}"`]));
+  const csv = rows.map(r => r.join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = `revoda-incidents-${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  showToast('✓ CSV exported');
+}
+
+function doExport(type) { showToast(`Generating ${type}...`); }
+
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.className = 'toast'; t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2800);
+}
+
+// Render alerts
+function renderAlerts() {
+  document.getElementById('alertList').innerHTML = ALERTS.map(a => `
+    <div class="alert-row">
+      <div class="alert-sev sev-${a.sev}">${a.icon}</div>
+      <div class="alert-content">
+        <div class="alert-t">${a.title}</div>
+        <div class="alert-b">${a.body}</div>
+      </div>
+      <div class="alert-time">${a.time}</div>
+    </div>
+  `).join('');
+}
+
+// Render analytics charts
+function renderCharts() {
+  const cats = [
+    {l:"Violence",v:218,c:"#E53D2E"},{l:"Voting",v:341,c:"#008751"},
+    {l:"Materials",v:187,c:"#E8C440"},{l:"Police",v:156,c:"#3d8bcd"},
+    {l:"Counting",v:142,c:"#fb923c"},{l:"Results",v:203,c:"#c084fc"},
+    {l:"Officials",v:78,c:"#34d399"},{l:"Announce",v:122,c:"#f472b6"},
+  ];
+  const states = [
+    {l:"Rivers",v:182,c:"#E53D2E"},{l:"Lagos",v:154,c:"#E8C440"},
+    {l:"Kano",v:138,c:"#3d8bcd"},{l:"Imo",v:117,c:"#c084fc"},
+    {l:"Borno",v:99,c:"#fb923c"},{l:"Delta",v:87,c:"#008751"},
+    {l:"Kaduna",v:76,c:"#34d399"},{l:"Oyo",v:65,c:"#f472b6"},
+  ];
+  const reporters = [
+    {l:"Citizen",v:545,c:"#008751"},{l:"Observer",v:312,c:"#3d8bcd"},
+    {l:"Party Agent",v:198,c:"#E8C440"},{l:"Journalist",v:143,c:"#c084fc"},
+    {l:"Partner",v:49,c:"#fb923c"},
+  ];
+  const hourly = [8,12,45,89,134,178,201,187,165,143,128,98,76,54].map((v,i)=>({l:`${8+i}h`,v,c:"#008751"}));
+
+  function renderBarChart(id, data) {
+    const max = Math.max(...data.map(d=>d.v));
+    document.getElementById(id).innerHTML = data.map(d => `
+      <div class="h-bar-row">
+        <div class="h-bar-label">${d.l}</div>
+        <div class="h-bar-track"><div class="h-bar-fill" style="width:${(d.v/max)*100}%;background:${d.c}"></div></div>
+        <div class="h-bar-val">${d.v}</div>
+      </div>
+    `).join('');
+  }
+
+  renderBarChart('catChart', cats);
+  renderBarChart('stateChart', states);
+  renderBarChart('reporterChart', reporters);
+  renderBarChart('hourlyChart', hourly);
+}
+
+// Render partners
+function renderPartners() {
+  document.getElementById('partnerGrid').innerHTML = PARTNERS.map(p => `
+    <div class="partner-card">
+      <div class="partner-card-header">
+        <div class="partner-icon">${p.icon}</div>
+        <div><div class="partner-name">${p.name}</div><div class="partner-type">${p.type}</div></div>
+      </div>
+      <div class="partner-stats">
+        <div class="partner-stat"><div class="partner-stat-num" style="color:var(--blue)">${p.reports}</div><div class="partner-stat-label">Reports</div></div>
+        <div class="partner-stat"><div class="partner-stat-num" style="color:var(--gl)">${p.verified}</div><div class="partner-stat-label">Verified</div></div>
+        <div class="partner-stat"><div class="partner-stat-num" style="color:#ff6b5b">${p.escalated}</div><div class="partner-stat-label">Escalated</div></div>
+      </div>
+      <div class="partner-token">Token: rvd_${Math.random().toString(36).slice(2,18)}...</div>
+    </div>
+  `).join('');
+}
+
+// Init
+renderTable(INCIDENTS);
+renderAlerts();
+renderCharts();
+renderPartners();
+
+// Close modal on overlay click
+document.getElementById('incModal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+</script>
+</body>
+</html>

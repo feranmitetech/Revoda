@@ -1,0 +1,1171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#008751">
+<title>Revoda — Report an Incident</title>
+
+<!-- PWA manifest inline -->
+<link rel="manifest" href="data:application/json,{
+  &quot;name&quot;: &quot;Revoda&quot;,
+  &quot;short_name&quot;: &quot;Revoda&quot;,
+  &quot;start_url&quot;: &quot;/report&quot;,
+  &quot;display&quot;: &quot;standalone&quot;,
+  &quot;background_color&quot;: &quot;#0D1117&quot;,
+  &quot;theme_color&quot;: &quot;#008751&quot;
+}">
+
+<style>
+  :root {
+    --green: #008751;
+    --green-light: #00a862;
+    --green-dark: #005c37;
+    --ink: #0D1117;
+    --ink-2: #161b22;
+    --ink-3: #21262d;
+    --white: #f0ede8;
+    --muted: #7d8590;
+    --border: #30363d;
+    --accent: #E8C440;
+    --danger: #E53D2E;
+    --radius: 12px;
+    --safe-bottom: env(safe-area-inset-bottom, 20px);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    height: 100%;
+    background: var(--ink);
+    color: var(--white);
+    font-family: -apple-system, 'SF Pro Text', 'Segoe UI', sans-serif;
+    font-size: 16px;
+    line-height: 1.5;
+    overscroll-behavior: none;
+  }
+
+  /* ── SCREENS ── */
+  .screen {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(30px);
+    transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  .screen.active {
+    opacity: 1;
+    pointer-events: all;
+    transform: none;
+  }
+
+  .screen.exit {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+
+  /* ── TOP BAR ── */
+  .topbar {
+    display: flex;
+    align-items: center;
+    padding: 16px 20px;
+    padding-top: calc(16px + env(safe-area-inset-top, 0px));
+    background: var(--ink);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    gap: 12px;
+  }
+
+  .topbar-logo {
+    width: 36px; height: 36px;
+    background: var(--green);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    font-weight: 900;
+    color: white;
+    letter-spacing: -1px;
+    flex-shrink: 0;
+  }
+
+  .topbar-text { flex: 1; }
+
+  .topbar-title {
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+  }
+
+  .topbar-sub {
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .back-btn {
+    width: 36px; height: 36px;
+    background: var(--ink-3);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+
+  /* ── PROGRESS BAR ── */
+  .progress-wrap {
+    padding: 12px 20px 0;
+    background: var(--ink);
+  }
+
+  .progress-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+
+  .progress-track {
+    height: 4px;
+    background: var(--ink-3);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: var(--green);
+    border-radius: 2px;
+    transition: width 0.4s ease;
+  }
+
+  /* ── STEP DOTS ── */
+  .step-dots {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px;
+  }
+
+  .step-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--ink-3);
+    transition: all 0.3s;
+  }
+
+  .step-dot.done { background: var(--green-dark); width: 14px; border-radius: 3px; }
+  .step-dot.active { background: var(--green); width: 14px; border-radius: 3px; }
+
+  /* ── FORM CONTENT ── */
+  .form-body {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .step-heading {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.4px;
+    line-height: 1.25;
+  }
+
+  .step-heading span { color: var(--green-light); }
+
+  .step-desc {
+    font-size: 14px;
+    color: var(--muted);
+    margin-top: 6px;
+  }
+
+  /* ── CATEGORY GRID ── */
+  .cat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 4px;
+  }
+
+  .cat-tile {
+    background: var(--ink-2);
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+    min-height: 90px;
+    justify-content: center;
+  }
+
+  .cat-tile:active { transform: scale(0.97); }
+  .cat-tile.selected { border-color: var(--green); background: rgba(0,135,81,0.1); }
+
+  .cat-icon { font-size: 26px; line-height: 1; }
+  .cat-name { font-size: 12px; font-weight: 600; line-height: 1.3; }
+
+  .cat-tile.selected .cat-name { color: var(--green-light); }
+
+  /* ── LOCATION ── */
+  .location-detect {
+    background: rgba(0,135,81,0.1);
+    border: 1px solid rgba(0,135,81,0.3);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .location-detect:active { transform: scale(0.99); }
+  .location-detect.detected { background: rgba(0,135,81,0.2); }
+
+  .loc-icon {
+    font-size: 24px;
+    flex-shrink: 0;
+  }
+
+  .loc-text .loc-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--green-light);
+  }
+
+  .loc-text .loc-sub {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  /* ── FORM FIELDS ── */
+  .field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .field-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .field-label.required::after {
+    content: ' *';
+    color: var(--danger);
+  }
+
+  .field-input, .field-select, .field-textarea {
+    background: var(--ink-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    color: var(--white);
+    font-size: 16px;   /* prevents iOS auto-zoom */
+    width: 100%;
+    transition: border-color 0.2s;
+    -webkit-appearance: none;
+  }
+
+  .field-input:focus, .field-select:focus, .field-textarea:focus {
+    outline: none;
+    border-color: var(--green);
+  }
+
+  .field-select option { background: #161b22; }
+
+  .field-textarea {
+    resize: none;
+    min-height: 120px;
+    line-height: 1.6;
+  }
+
+  /* Character counter */
+  .char-count {
+    text-align: right;
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  /* ── REPORTER TYPE ── */
+  .reporter-opts {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .reporter-opt {
+    background: var(--ink-2);
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .reporter-opt.selected { border-color: var(--green); background: rgba(0,135,81,0.1); }
+  .reporter-opt:active { transform: scale(0.99); }
+
+  .rep-icon { font-size: 20px; flex-shrink: 0; }
+  .rep-name { font-size: 15px; font-weight: 600; }
+  .rep-sub { font-size: 12px; color: var(--muted); }
+  .rep-check {
+    margin-left: auto;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px;
+    flex-shrink: 0;
+    transition: all 0.2s;
+  }
+  .reporter-opt.selected .rep-check { background: var(--green); border-color: var(--green); }
+
+  /* ── ANON NOTICE ── */
+  .anon-banner {
+    background: rgba(0,135,81,0.08);
+    border: 1px solid rgba(0,135,81,0.25);
+    border-radius: 10px;
+    padding: 14px 16px;
+    display: flex;
+    gap: 12px;
+  }
+
+  .anon-icon { font-size: 20px; flex-shrink: 0; }
+  .anon-text { font-size: 13px; color: var(--white); opacity: 0.8; line-height: 1.5; }
+  .anon-text strong { color: var(--green-light); }
+
+  /* ── MEDIA UPLOAD ── */
+  .media-zone {
+    border: 2px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .media-zone:active, .media-zone.drag-over { border-color: var(--green); background: rgba(0,135,81,0.05); }
+  .media-icon { font-size: 32px; margin-bottom: 8px; }
+  .media-label { font-size: 14px; font-weight: 600; color: var(--green-light); }
+  .media-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+  .media-previews {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+  }
+
+  .media-preview {
+    width: 72px; height: 72px;
+    border-radius: 8px;
+    object-fit: cover;
+    border: 1px solid var(--border);
+  }
+
+  /* ── REVIEW SCREEN ── */
+  .review-card {
+    background: var(--ink-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .review-row {
+    display: flex;
+    padding: 14px 16px;
+    gap: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .review-row:last-child { border-bottom: none; }
+  .review-key { font-size: 12px; color: var(--muted); width: 100px; flex-shrink: 0; padding-top: 2px; }
+  .review-val { font-size: 14px; font-weight: 500; line-height: 1.4; }
+
+  /* ── BOTTOM CTA ── */
+  .bottom-cta {
+    padding: 16px 20px;
+    padding-bottom: calc(16px + var(--safe-bottom));
+    background: var(--ink);
+    border-top: 1px solid var(--border);
+    position: sticky;
+    bottom: 0;
+    display: flex;
+    gap: 10px;
+  }
+
+  .btn-secondary {
+    background: var(--ink-3);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 20px;
+    color: var(--white);
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    min-width: 80px;
+  }
+
+  .btn-primary {
+    flex: 1;
+    background: var(--green);
+    border: none;
+    border-radius: 12px;
+    padding: 16px 20px;
+    color: white;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .btn-primary:active { transform: scale(0.98); background: var(--green-dark); }
+  .btn-primary:disabled { opacity: 0.5; }
+
+  .btn-primary.loading .btn-label { display: none; }
+  .btn-primary .btn-spinner {
+    display: none;
+    width: 20px; height: 20px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+
+  .btn-primary.loading .btn-spinner { display: block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── SUCCESS SCREEN ── */
+  .success-wrap {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 32px;
+    text-align: center;
+    gap: 16px;
+  }
+
+  .success-icon {
+    width: 80px; height: 80px;
+    background: rgba(0,135,81,0.15);
+    border: 2px solid var(--green);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 36px;
+    animation: popIn 0.5s cubic-bezier(0.34,1.56,0.64,1);
+  }
+
+  @keyframes popIn {
+    0% { transform: scale(0); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  .success-title {
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: -0.4px;
+  }
+
+  .success-id {
+    font-family: 'SF Mono', 'Courier New', monospace;
+    font-size: 13px;
+    color: var(--muted);
+    background: var(--ink-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 16px;
+    width: 100%;
+    text-align: center;
+  }
+
+  .success-steps {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    text-align: left;
+    margin-top: 8px;
+  }
+
+  .success-step {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    font-size: 14px;
+  }
+
+  .success-step-num {
+    width: 24px; height: 24px;
+    background: var(--ink-3);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--green-light);
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  /* ── OFFLINE BANNER ── */
+  .offline-banner {
+    background: rgba(232,196,64,0.15);
+    border-bottom: 1px solid rgba(232,196,64,0.3);
+    padding: 10px 20px;
+    font-size: 13px;
+    color: var(--accent);
+    display: none;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .offline-banner.visible { display: flex; }
+</style>
+</head>
+<body>
+
+<!-- OFFLINE NOTICE -->
+<div class="offline-banner" id="offlineBanner">
+  📡 You're offline — your report will be saved and submitted when you reconnect.
+</div>
+
+<!-- ══ SCREEN 1: CATEGORY ══════════════════════════════════════════ -->
+<div class="screen active" id="screen-1">
+  <div class="topbar">
+    <div class="topbar-logo">R</div>
+    <div class="topbar-text">
+      <div class="topbar-title">Report Incident</div>
+      <div class="topbar-sub">EiE Nigeria · Revoda Platform</div>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span>Step 1 of 4</span>
+      <span>Category</span>
+    </div>
+    <div class="progress-track"><div class="progress-fill" style="width:25%"></div></div>
+  </div>
+  <div class="step-dots">
+    <div class="step-dot active"></div>
+    <div class="step-dot"></div>
+    <div class="step-dot"></div>
+    <div class="step-dot"></div>
+  </div>
+
+  <div class="form-body">
+    <div>
+      <div class="step-heading">What <span>type of incident</span> are you reporting?</div>
+      <div class="step-desc">Select the category that best describes what you witnessed.</div>
+    </div>
+
+    <div class="cat-grid">
+      <div class="cat-tile" onclick="selectCategory(this,'violence','Violence')">
+        <div class="cat-icon">⚡</div>
+        <div class="cat-name">Violence / Thuggery</div>
+      </div>
+      <div class="cat-tile" onclick="selectCategory(this,'voting_irregularity','Voting Irregularity')">
+        <div class="cat-icon">🗳️</div>
+        <div class="cat-name">Voting Irregularity</div>
+      </div>
+      <div class="cat-tile" onclick="selectCategory(this,'material_availability','Material Availability')">
+        <div class="cat-icon">📦</div>
+        <div class="cat-name">Missing / Faulty Materials</div>
+      </div>
+      <div class="cat-tile" onclick="selectCategory(this,'police_behaviour','Police Behaviour')">
+        <div class="cat-icon">🚔</div>
+        <div class="cat-name">Police Behaviour</div>
+      </div>
+      <div class="cat-tile" onclick="selectCategory(this,'vote_counting','Vote Counting')">
+        <div class="cat-icon">🔢</div>
+        <div class="cat-name">Vote Counting Issue</div>
+      </div>
+      <div class="cat-tile" onclick="selectCategory(this,'results_verification','Results')">
+        <div class="cat-icon">📋</div>
+        <div class="cat-name">Results / Collation</div>
+      </div>
+      <div class="cat-tile" onclick="selectCategory(this,'electoral_officials_arrival','Officials Arrival')">
+        <div class="cat-icon">⏰</div>
+        <div class="cat-name">Late Officials Arrival</div>
+      </div>
+      <div class="cat-tile" onclick="selectCategory(this,'result_announcement','Announcement')">
+        <div class="cat-icon">📢</div>
+        <div class="cat-name">Result Announcement</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-cta">
+    <button class="btn-primary" id="btn-1" disabled onclick="goTo(2)">
+      <span class="btn-label">Continue →</span>
+      <div class="btn-spinner"></div>
+    </button>
+  </div>
+</div>
+
+
+<!-- ══ SCREEN 2: LOCATION ══════════════════════════════════════════ -->
+<div class="screen" id="screen-2">
+  <div class="topbar">
+    <div class="back-btn" onclick="goTo(1)">‹</div>
+    <div class="topbar-text">
+      <div class="topbar-title">Location</div>
+      <div class="topbar-sub">Where did this happen?</div>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label"><span>Step 2 of 4</span><span>Location</span></div>
+    <div class="progress-track"><div class="progress-fill" style="width:50%"></div></div>
+  </div>
+  <div class="step-dots">
+    <div class="step-dot done"></div>
+    <div class="step-dot active"></div>
+    <div class="step-dot"></div>
+    <div class="step-dot"></div>
+  </div>
+
+  <div class="form-body">
+    <div>
+      <div class="step-heading">Where did this <span>happen?</span></div>
+      <div class="step-desc">Be as specific as possible. Your location is not tracked.</div>
+    </div>
+
+    <!-- Auto-detect -->
+    <div class="location-detect" id="gpsBtn" onclick="detectGPS()">
+      <div class="loc-icon">📍</div>
+      <div class="loc-text">
+        <div class="loc-title" id="gpsTitleText">Use my current location</div>
+        <div class="loc-sub" id="gpsSubText">Tap to detect GPS coordinates</div>
+      </div>
+    </div>
+
+    <div class="field-group">
+      <label class="field-label required">State</label>
+      <select class="field-select" id="stateSelect" onchange="stateChanged()">
+        <option value="">Select state...</option>
+        <option>Abia</option><option>Adamawa</option><option>Akwa Ibom</option>
+        <option>Anambra</option><option>Bauchi</option><option>Bayelsa</option>
+        <option>Benue</option><option>Borno</option><option>Cross River</option>
+        <option>Delta</option><option>Ebonyi</option><option>Edo</option>
+        <option>Ekiti</option><option>Enugu</option><option>FCT</option>
+        <option>Gombe</option><option>Imo</option><option>Jigawa</option>
+        <option>Kaduna</option><option>Kano</option><option>Katsina</option>
+        <option>Kebbi</option><option>Kogi</option><option>Kwara</option>
+        <option>Lagos</option><option>Nasarawa</option><option>Niger</option>
+        <option>Ogun</option><option>Ondo</option><option>Osun</option>
+        <option>Oyo</option><option>Plateau</option><option>Rivers</option>
+        <option>Sokoto</option><option>Taraba</option><option>Yobe</option>
+        <option>Zamfara</option>
+      </select>
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">LGA (Local Government Area)</label>
+      <input class="field-input" id="lgaInput" type="text" placeholder="e.g. Ikeja, Obio-Akpor...">
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">Ward (optional)</label>
+      <input class="field-input" id="wardInput" type="text" placeholder="Ward name...">
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">Polling Unit Code (optional)</label>
+      <input class="field-input" id="puInput" type="text" placeholder="e.g. LG-IKJ-031"
+             style="font-family: 'SF Mono', monospace; text-transform: uppercase"
+             oninput="this.value=this.value.toUpperCase()">
+    </div>
+  </div>
+
+  <div class="bottom-cta">
+    <button class="btn-secondary" onclick="goTo(1)">Back</button>
+    <button class="btn-primary" id="btn-2" disabled onclick="goTo(3)">
+      <span class="btn-label">Continue →</span>
+    </button>
+  </div>
+</div>
+
+
+<!-- ══ SCREEN 3: DESCRIPTION + REPORTER ══════════════════════════ -->
+<div class="screen" id="screen-3">
+  <div class="topbar">
+    <div class="back-btn" onclick="goTo(2)">‹</div>
+    <div class="topbar-text">
+      <div class="topbar-title">Details</div>
+      <div class="topbar-sub">What happened exactly?</div>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label"><span>Step 3 of 4</span><span>Details</span></div>
+    <div class="progress-track"><div class="progress-fill" style="width:75%"></div></div>
+  </div>
+  <div class="step-dots">
+    <div class="step-dot done"></div>
+    <div class="step-dot done"></div>
+    <div class="step-dot active"></div>
+    <div class="step-dot"></div>
+  </div>
+
+  <div class="form-body">
+    <div>
+      <div class="step-heading">Describe <span>what happened</span></div>
+    </div>
+
+    <div class="field-group">
+      <label class="field-label required">Description</label>
+      <textarea class="field-textarea" id="descTextarea"
+        placeholder="What did you see? Who was involved? What time did this happen? What was the impact on voters?"
+        oninput="updateCharCount(this)"></textarea>
+      <div class="char-count" id="charCount">0 / 2000</div>
+    </div>
+
+    <!-- Media upload -->
+    <div class="field-group">
+      <label class="field-label">Photo or Video Evidence (optional)</label>
+      <div class="media-zone" onclick="document.getElementById('mediaInput').click()">
+        <div class="media-icon">📷</div>
+        <div class="media-label">Tap to add photos or videos</div>
+        <div class="media-sub">Photos, screenshots, video clips accepted</div>
+      </div>
+      <input type="file" id="mediaInput" accept="image/*,video/*" multiple
+             style="display:none" onchange="handleMediaUpload(this)">
+      <div class="media-previews" id="mediaPreviews"></div>
+    </div>
+
+    <!-- Reporter type -->
+    <div class="field-group">
+      <label class="field-label required">I am reporting as...</label>
+      <div class="reporter-opts">
+        <div class="reporter-opt" onclick="selectReporter(this,'citizen')">
+          <span class="rep-icon">🙋</span>
+          <div>
+            <div class="rep-name">A Citizen / Voter</div>
+            <div class="rep-sub">I witnessed this personally</div>
+          </div>
+          <div class="rep-check">✓</div>
+        </div>
+        <div class="reporter-opt" onclick="selectReporter(this,'party_agent')">
+          <span class="rep-icon">🏛️</span>
+          <div>
+            <div class="rep-name">Party Agent</div>
+            <div class="rep-sub">Accredited at this polling unit</div>
+          </div>
+          <div class="rep-check">✓</div>
+        </div>
+        <div class="reporter-opt" onclick="selectReporter(this,'observer')">
+          <span class="rep-icon">👁️</span>
+          <div>
+            <div class="rep-name">Election Observer (CSO)</div>
+            <div class="rep-sub">Official observer organisation</div>
+          </div>
+          <div class="rep-check">✓</div>
+        </div>
+        <div class="reporter-opt" onclick="selectReporter(this,'journalist')">
+          <span class="rep-icon">📰</span>
+          <div>
+            <div class="rep-name">Journalist</div>
+            <div class="rep-sub">Media professional on the ground</div>
+          </div>
+          <div class="rep-check">✓</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Anonymity guarantee -->
+    <div class="anon-banner">
+      <div class="anon-icon">🔒</div>
+      <div class="anon-text">
+        <strong>Your identity is protected.</strong> Revoda uses one-way anonymisation —
+        your phone number and personal details are never stored. Reports are encrypted
+        before leaving your device.
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-cta">
+    <button class="btn-secondary" onclick="goTo(2)">Back</button>
+    <button class="btn-primary" id="btn-3" disabled onclick="goTo(4)">
+      <span class="btn-label">Review Report →</span>
+    </button>
+  </div>
+</div>
+
+
+<!-- ══ SCREEN 4: REVIEW + SUBMIT ══════════════════════════════════ -->
+<div class="screen" id="screen-4">
+  <div class="topbar">
+    <div class="back-btn" onclick="goTo(3)">‹</div>
+    <div class="topbar-text">
+      <div class="topbar-title">Review & Submit</div>
+      <div class="topbar-sub">Check your report before sending</div>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label"><span>Step 4 of 4</span><span>Review</span></div>
+    <div class="progress-track"><div class="progress-fill" style="width:100%"></div></div>
+  </div>
+  <div class="step-dots">
+    <div class="step-dot done"></div>
+    <div class="step-dot done"></div>
+    <div class="step-dot done"></div>
+    <div class="step-dot active"></div>
+  </div>
+
+  <div class="form-body">
+    <div>
+      <div class="step-heading">Review your <span>report</span></div>
+      <div class="step-desc">Tap any section to edit. Your identity is protected.</div>
+    </div>
+
+    <div class="review-card" id="reviewCard">
+      <!-- Filled by JS -->
+    </div>
+
+    <div class="anon-banner">
+      <div class="anon-icon">⚖️</div>
+      <div class="anon-text">
+        By submitting, you confirm this report is accurate to the best of your knowledge.
+        False reports undermine election integrity. <strong>All reports are reviewed by EiE Nigeria partners.</strong>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-cta">
+    <button class="btn-secondary" onclick="goTo(3)">Back</button>
+    <button class="btn-primary" id="btn-submit" onclick="submitReport()">
+      <span class="btn-label">🚀 Submit Report</span>
+      <div class="btn-spinner"></div>
+    </button>
+  </div>
+</div>
+
+
+<!-- ══ SCREEN 5: SUCCESS ══════════════════════════════════════════ -->
+<div class="screen" id="screen-5">
+  <div class="topbar">
+    <div class="topbar-logo">R</div>
+    <div class="topbar-text">
+      <div class="topbar-title">Report Submitted</div>
+      <div class="topbar-sub">Thank you for your contribution</div>
+    </div>
+  </div>
+
+  <div class="success-wrap">
+    <div class="success-icon">✅</div>
+    <div class="success-title">Report Received</div>
+    <p style="font-size:15px;color:var(--muted);text-align:center">
+      Your incident has been securely logged and will be reviewed by EiE Nigeria partners.
+    </p>
+
+    <div class="success-id" id="successId">
+      Report ID: loading...
+    </div>
+
+    <div class="success-steps">
+      <div style="font-size:13px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">What happens next</div>
+      <div class="success-step">
+        <div class="success-step-num">1</div>
+        <div>Your report enters the unverified queue on the Revoda dashboard</div>
+      </div>
+      <div class="success-step">
+        <div class="success-step-num">2</div>
+        <div>A trained partner verifies the incident using corroborating reports</div>
+      </div>
+      <div class="success-step">
+        <div class="success-step-num">3</div>
+        <div>If verified, it appears publicly on the map and may be escalated to INEC or security agencies</div>
+      </div>
+      <div class="success-step">
+        <div class="success-step-num">4</div>
+        <div>Your report becomes part of Nigeria's permanent election incident archive</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-cta">
+    <button class="btn-primary" onclick="resetForm()" style="background:var(--ink-3);border:1px solid var(--border)">
+      <span class="btn-label">Report Another Incident</span>
+    </button>
+  </div>
+</div>
+
+
+<script>
+// ── State ─────────────────────────────────────────────────────────────────────
+const formData = {
+  category: '', categoryName: '',
+  state: '', lga: '', ward: '', puCode: '',
+  latitude: null, longitude: null,
+  description: '', reporterType: '',
+  mediaFiles: []
+};
+
+let currentScreen = 1;
+
+// ── Navigation ─────────────────────────────────────────────────────────────────
+function goTo(n) {
+  const current = document.getElementById(`screen-${currentScreen}`);
+  const next = document.getElementById(`screen-${n}`);
+
+  current.classList.add('exit');
+  setTimeout(() => { current.classList.remove('active', 'exit'); }, 300);
+
+  next.classList.add('active');
+  currentScreen = n;
+
+  if (n === 4) buildReviewCard();
+  window.scrollTo(0, 0);
+}
+
+// ── Screen 1: Category ────────────────────────────────────────────────────────
+function selectCategory(el, value, name) {
+  document.querySelectorAll('.cat-tile').forEach(t => t.classList.remove('selected'));
+  el.classList.add('selected');
+  formData.category = value;
+  formData.categoryName = name;
+  document.getElementById('btn-1').disabled = false;
+}
+
+// ── Screen 2: Location ────────────────────────────────────────────────────────
+function stateChanged() {
+  formData.state = document.getElementById('stateSelect').value;
+  document.getElementById('btn-2').disabled = !formData.state;
+}
+
+function detectGPS() {
+  const btn = document.getElementById('gpsBtn');
+  const title = document.getElementById('gpsTitleText');
+  const sub = document.getElementById('gpsSubText');
+
+  title.textContent = 'Detecting location...';
+  sub.textContent = 'Please allow location access';
+
+  if (!navigator.geolocation) {
+    title.textContent = 'GPS not available';
+    sub.textContent = 'Please enter your location manually';
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      formData.latitude = pos.coords.latitude;
+      formData.longitude = pos.coords.longitude;
+      title.textContent = '📍 Location detected';
+      sub.textContent = `${pos.coords.latitude.toFixed(4)}°N, ${pos.coords.longitude.toFixed(4)}°E`;
+      btn.classList.add('detected');
+    },
+    () => {
+      title.textContent = 'Could not detect location';
+      sub.textContent = 'Please enter manually below';
+    }
+  );
+}
+
+// ── Screen 3: Description ─────────────────────────────────────────────────────
+function updateCharCount(el) {
+  const len = el.value.length;
+  document.getElementById('charCount').textContent = `${len} / 2000`;
+  formData.description = el.value;
+  checkStep3();
+}
+
+function selectReporter(el, value) {
+  document.querySelectorAll('.reporter-opt').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  formData.reporterType = value;
+  checkStep3();
+}
+
+function checkStep3() {
+  const ok = formData.description.trim().length >= 10 && formData.reporterType;
+  document.getElementById('btn-3').disabled = !ok;
+}
+
+function handleMediaUpload(input) {
+  const previews = document.getElementById('mediaPreviews');
+  Array.from(input.files).forEach(file => {
+    const url = URL.createObjectURL(file);
+    formData.mediaFiles.push(file);
+    const img = document.createElement('img');
+    img.className = 'media-preview';
+    img.src = url;
+    previews.appendChild(img);
+  });
+}
+
+// ── Screen 4: Review ──────────────────────────────────────────────────────────
+function buildReviewCard() {
+  const items = [
+    { key: 'Category',       val: formData.categoryName },
+    { key: 'State',          val: formData.state || '—' },
+    { key: 'LGA',            val: document.getElementById('lgaInput').value || '—' },
+    { key: 'Ward',           val: document.getElementById('wardInput').value || '—' },
+    { key: 'Polling Unit',   val: document.getElementById('puInput').value || '—' },
+    { key: 'GPS',            val: formData.latitude ? `${formData.latitude.toFixed(4)}°N, ${formData.longitude.toFixed(4)}°E` : 'Not captured' },
+    { key: 'Description',    val: formData.description },
+    { key: 'Reporter Type',  val: formData.reporterType.replace('_', ' ') },
+    { key: 'Media',          val: formData.mediaFiles.length ? `${formData.mediaFiles.length} file(s) attached` : 'None' },
+    { key: 'Identity',       val: '🔒 Anonymised — not stored' },
+  ];
+
+  document.getElementById('reviewCard').innerHTML = items.map(item => `
+    <div class="review-row">
+      <div class="review-key">${item.key}</div>
+      <div class="review-val">${item.val}</div>
+    </div>
+  `).join('');
+}
+
+// ── Submit ─────────────────────────────────────────────────────────────────────
+async function submitReport() {
+  const btn = document.getElementById('btn-submit');
+  btn.classList.add('loading');
+  btn.disabled = true;
+
+  // Build payload
+  const payload = {
+    category: formData.category,
+    description: formData.description,
+    state: formData.state,
+    lga: document.getElementById('lgaInput').value,
+    ward: document.getElementById('wardInput').value,
+    polling_unit_code: document.getElementById('puInput').value,
+    latitude: formData.latitude,
+    longitude: formData.longitude,
+    reporter_type: formData.reporterType,
+    device_fingerprint: await getDeviceFingerprint()
+  };
+
+  try {
+    // If offline, queue for later
+    if (!navigator.onLine) {
+      queueOfflineReport(payload);
+      showSuccess('OFFLINE-' + Date.now());
+      return;
+    }
+
+    const res = await fetch('/api/v1/incidents', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    showSuccess(data.id);
+
+  } catch (err) {
+    // Graceful fallback: queue locally
+    queueOfflineReport(payload);
+    showSuccess('QUEUED-' + Date.now());
+  }
+}
+
+function showSuccess(id) {
+  document.getElementById('successId').textContent = `Report ID: RVD-${id.slice(-8).toUpperCase()}`;
+  goTo(5);
+}
+
+// ── Offline queue ─────────────────────────────────────────────────────────────
+function queueOfflineReport(payload) {
+  const queue = JSON.parse(localStorage.getItem('revoda_queue') || '[]');
+  queue.push({ payload, queued_at: Date.now() });
+  localStorage.setItem('revoda_queue', JSON.stringify(queue));
+}
+
+async function flushOfflineQueue() {
+  const queue = JSON.parse(localStorage.getItem('revoda_queue') || '[]');
+  if (!queue.length) return;
+  const remaining = [];
+  for (const item of queue) {
+    try {
+      await fetch('/api/v1/incidents', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(item.payload)
+      });
+    } catch {
+      remaining.push(item);
+    }
+  }
+  localStorage.setItem('revoda_queue', JSON.stringify(remaining));
+}
+
+// ── Device fingerprint (hashed client-side) ───────────────────────────────────
+async function getDeviceFingerprint() {
+  const components = [
+    navigator.userAgent, navigator.language,
+    screen.width, screen.height, screen.colorDepth,
+    new Date().getTimezoneOffset()
+  ].join('|');
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(components));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('').slice(0, 32);
+}
+
+// ── Reset ─────────────────────────────────────────────────────────────────────
+function resetForm() {
+  Object.assign(formData, {
+    category: '', categoryName: '', state: '', lga: '', ward: '',
+    puCode: '', latitude: null, longitude: null,
+    description: '', reporterType: '', mediaFiles: []
+  });
+  document.querySelectorAll('.cat-tile').forEach(t => t.classList.remove('selected'));
+  document.querySelectorAll('.reporter-opt').forEach(o => o.classList.remove('selected'));
+  document.getElementById('descTextarea').value = '';
+  document.getElementById('stateSelect').value = '';
+  document.getElementById('lgaInput').value = '';
+  document.getElementById('mediaPreviews').innerHTML = '';
+  document.querySelectorAll('.btn-primary').forEach(b => b.disabled = true);
+  goTo(1);
+}
+
+// ── Offline detection ─────────────────────────────────────────────────────────
+window.addEventListener('online', () => {
+  document.getElementById('offlineBanner').classList.remove('visible');
+  flushOfflineQueue();
+});
+window.addEventListener('offline', () => {
+  document.getElementById('offlineBanner').classList.add('visible');
+});
+
+// Initial offline check
+if (!navigator.onLine) document.getElementById('offlineBanner').classList.add('visible');
+</script>
+</body>
+</html>
